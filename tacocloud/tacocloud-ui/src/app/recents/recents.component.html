@@ -16,6 +16,12 @@
         </ul>
         </div>
         <div *ngIf="(taco.ingredients | wraps)?.length == 0">in a bowl</div>
+        <div *ngIf="taco.classification">
+          <span>Dietary: </span><span *ngFor="let tag of taco.classification.dietaryTags">{{tag}} </span><br/>
+          <span>Allergens: </span><span *ngFor="let allergen of taco.classification.allergens">{{allergen}} </span><br/>
+          <span>Spice: {{taco.classification.spiceLevel}}</span><br/>
+          <span class="small">{{taco.classification.disclaimer}}</span>
+        </div>
       </div>
       <little-button label="Order this taco"></little-button>
   </div>

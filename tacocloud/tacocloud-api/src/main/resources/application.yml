@@ -23,6 +23,26 @@ spring:
     producer:
       key-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer    
+tacocloud:
+  order:
+    max-item-quantity: 20
+    currency: MXN
+  coupons:
+    codes:
+      WELCOME10:
+        type: PERCENTAGE
+        value: 10
+        starts-on: 2026-01-01
+        expires-on: 2027-12-31
+        minimum-subtotal: 100.00
+        max-discount: 50.00
+      TACO50:
+        type: FIXED
+        value: 50.00
+        starts-on: 2026-01-01
+        expires-on: 2027-12-31
+        minimum-subtotal: 200.00
+        max-discount: 50.00
 ---
 # None of these properties will actually work as configured for this profile.
 # But it is left here as an example of configuring for a production profile

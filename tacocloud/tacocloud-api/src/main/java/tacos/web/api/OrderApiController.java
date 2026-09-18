@@ -1,7 +1,9 @@
 package tacos.web.api;
 
-import org.springframework.dao.EmptyResultDataAccessException;
+import javax.validation.Valid;
+
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,103 +18,124 @@ import org.springframework.web.bind.annotation.RestController;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tacos.TacoOrder;
+import tacos.User;
 import tacos.data.OrderRepository;
-import tacos.messaging.OrderMessagingService;
+import tacos.service.EmailOrderSubmissionService;
+import tacos.service.OrderCreationService;
+import tacos.service.OrderService;
+import tacos.web.api.dto.OrderCreateRequest;
+import tacos.web.api.dto.OrderResponse;
+import tacos.web.api.mapper.OrderMapper;
 
 @RestController
-@RequestMapping(path="/api/orders",
-                produces="application/json")
-@CrossOrigin(origins="http://localhost:8080")
+@RequestMapping(
+    path = "/api/orders",
+    produces = "application/json")
+@CrossOrigin(origins = "http://localhost:8080")
 public class OrderApiController {
 
-  private OrderRepository repo;
-  private OrderMessagingService orderMessages;
-  private EmailOrderService emailOrderService;
+  private final OrderRepository repo;
+  private final EmailOrderSubmissionService
+      emailOrderSubmissionService;
+  private final OrderService orderService;
+  private final OrderCreationService
+      orderCreationService;
+  private final OrderMapper orderMapper;
 
-  public OrderApiController(OrderRepository repo,
-                            OrderMessagingService orderMessages,
-                            EmailOrderService emailOrderService) {
+  public OrderApiController(
+      OrderRepository repo,
+      EmailOrderSubmissionService
+          emailOrderSubmissionService,
+      OrderService orderService,
+      OrderCreationService orderCreationService,
+      OrderMapper orderMapper) {
+
     this.repo = repo;
-    this.orderMessages = orderMessages;
-    this.emailOrderService = emailOrderService;
+    this.emailOrderSubmissionService =
+        emailOrderSubmissionService;
+    this.orderService = orderService;
+    this.orderCreationService =
+        orderCreationService;
+    this.orderMapper = orderMapper;
   }
 
-  @GetMapping(produces="application/json")
-  public Flux<TacoOrder> allOrders() {
-    return repo.findAll();
-  }
+  @GetMapping
+    public Flux<OrderResponse> allOrders(@AuthenticationPrincipal User authenticatedUser) {
+        return orderService
+            .findVisibleOrders(authenticatedUser)
+            .map(orderMapper::toResponse);
+    }
 
-//  @PostMapping(consumes="application/json")
-//  @ResponseStatus(HttpStatus.CREATED)
-//  public Mono<Order> postOrder(@RequestBody Mono<Order> order) {
-//    order.subscribe(orderMessages::sendOrder); // TODO: not ideal...work into reactive flow below
-//    return order
-//        .flatMap(repo::save);
-//  }
-
-  @PostMapping(consumes="application/json")
+  @PostMapping(consumes = "application/json")
   @ResponseStatus(HttpStatus.CREATED)
-  public Mono<TacoOrder> postOrder(@RequestBody TacoOrder order) {
-    orderMessages.sendOrder(order);
-    return repo.save(order);
+  public Mono<OrderResponse> postOrder(
+      @Valid @RequestBody
+          OrderCreateRequest request,
+      @AuthenticationPrincipal
+          User authenticatedUser) {
+
+    return orderCreationService
+        .create(request, authenticatedUser)
+        .map(orderMapper::toResponse);
   }
 
-  @PostMapping(path="fromEmail", consumes="application/json")
+  @PostMapping(
+      path = "fromEmail",
+      consumes = "application/json")
   @ResponseStatus(HttpStatus.CREATED)
-  public Mono<TacoOrder> postOrderFromEmail(@RequestBody Mono<EmailOrder> emailOrder) {
-    Mono<TacoOrder> order = emailOrderService.convertEmailOrderToDomainOrder(emailOrder);
-    order.subscribe(orderMessages::sendOrder); // TODO: not ideal...work into reactive flow below
-    return order
-        .flatMap(repo::save);
+  public Mono<OrderResponse> postOrderFromEmail(
+      @Valid @RequestBody Mono<EmailOrder> emailOrder) {
+
+    return emailOrderSubmissionService
+        .submit(emailOrder)
+        .map(orderMapper::toResponse);
   }
 
-  @PutMapping(path="/{orderId}", consumes="application/json")
-  public Mono<TacoOrder> putOrder(@RequestBody Mono<TacoOrder> order) {
-    return order.flatMap(repo::save);
+  @PatchMapping(
+      path = "/{orderId}",
+      consumes = "application/json")
+  public Mono<OrderResponse> patchOrder(
+      @PathVariable("orderId") String orderId,
+      @Valid @RequestBody
+          OrderPatchRequest patch,
+      @AuthenticationPrincipal
+          User authenticatedUser) {
+
+    return orderService
+        .patchOrder(
+            orderId,
+            patch,
+            authenticatedUser)
+        .map(orderMapper::toResponse);
   }
 
-  @PatchMapping(path="/{orderId}", consumes="application/json")
-  public Mono<TacoOrder> patchOrder(@PathVariable("orderId") String orderId,
-                          @RequestBody TacoOrder patch) {
+  @PutMapping(
+      path = "/{orderId}",
+      consumes = "application/json")
+  public Mono<OrderResponse> putOrder(
+      @PathVariable("orderId") String orderId,
+      @Valid @RequestBody
+          OrderReplaceRequest request,
+      @AuthenticationPrincipal
+          User authenticatedUser) {
 
-    return repo.findById(orderId)
-        .map(order -> {
-          if (patch.getDeliveryName() != null) {
-            order.setDeliveryName(patch.getDeliveryName());
-          }
-          if (patch.getDeliveryStreet() != null) {
-            order.setDeliveryStreet(patch.getDeliveryStreet());
-          }
-          if (patch.getDeliveryCity() != null) {
-            order.setDeliveryCity(patch.getDeliveryCity());
-          }
-          if (patch.getDeliveryState() != null) {
-            order.setDeliveryState(patch.getDeliveryState());
-          }
-          if (patch.getDeliveryZip() != null) {
-            order.setDeliveryZip(patch.getDeliveryState());
-          }
-          if (patch.getCcNumber() != null) {
-            order.setCcNumber(patch.getCcNumber());
-          }
-          if (patch.getCcExpiration() != null) {
-            order.setCcExpiration(patch.getCcExpiration());
-          }
-          if (patch.getCcCVV() != null) {
-            order.setCcCVV(patch.getCcCVV());
-          }
-          return order;
-        })
-        .flatMap(repo::save);
+    return orderService
+        .replaceOrder(
+            orderId,
+            request,
+            authenticatedUser)
+        .map(orderMapper::toResponse);
   }
 
   @DeleteMapping("/{orderId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void deleteOrder(@PathVariable("orderId") String orderId) {
-    try {
-      repo.deleteById(orderId);
-    } catch (EmptyResultDataAccessException e) {}
-  }
+  public Mono<Void> deleteOrder(
+      @PathVariable("orderId") String orderId,
+      @AuthenticationPrincipal
+          User authenticatedUser) {
 
+    return orderService.deleteOrder(
+        orderId,
+        authenticatedUser);
+  }
 }

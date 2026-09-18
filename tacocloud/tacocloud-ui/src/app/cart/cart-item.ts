@@ -8,8 +8,12 @@ export class CartItem {
     this.taco = taco;
   }
 
+  get unitPrice() {
+    return this.taco.ingredients.reduce((total, ingredient) => total + Number(ingredient.unitPrice), 0);
+  }
+
   get lineTotal() {
-    return this.quantity * 4.99;
+    return this.quantity * this.unitPrice;
   }
 
 }

@@ -14,12 +14,12 @@ export class CartComponent implements OnInit {
   model = {
     deliveryName: '',
     deliveryStreet: '',
+    deliveryCity: '',
     deliveryState: '',
     deliveryZip: '',
-    ccNumber: '',
-    ccExpiration: '',
-    ccCVV: '',
-    tacos: []
+    paymentMethodId: '',
+    couponCode: '',
+    items: []
   };
 
   constructor(private cart: CartService, private httpClient: HttpClient) {
@@ -37,10 +37,13 @@ export class CartComponent implements OnInit {
   }
 
   onSubmit() {
-    // this.model.tacos = this.cart.getItemsInCart();
-    this.cart.getItemsInCart().forEach(cartItem => {
-      this.model.tacos.push(cartItem.taco);
-    });
+    this.model.items = this.cart.getItemsInCart().filter(item => Number(item.quantity) > 0).map(item => ({
+      taco: {
+        name: item.taco.name,
+        ingredientIds: item.taco.ingredients.map(ingredient => ingredient.id)
+      },
+      quantity: Number(item.quantity)
+    }));
 
     this.httpClient.post(
         'http://localhost:8080/api/orders',
@@ -49,7 +52,6 @@ export class CartComponent implements OnInit {
                     .set('Accept', 'application/json'),
         }).subscribe(r => this.cart.emptyCart());
 
-    // TODO: Do something after this...navigate to a thank you page or something
   }
 
 }

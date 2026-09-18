@@ -1,80 +1,260 @@
 package tacos.security;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation
-             .authentication.builders.AuthenticationManagerBuilder;
+    .authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web
-             .builders.HttpSecurity;
+    .builders.HttpSecurity;
 import org.springframework.security.config.annotation.web
-                        .configuration.EnableWebSecurity;
+    .configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web
-                        .configuration.WebSecurityConfigurerAdapter;
+    .configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.factory
+    .PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication
+    .HttpStatusEntryPoint;
+import org.springframework.security.web.util.matcher
+    .AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher
+    .OrRequestMatcher;
+import org.springframework.security.web.util.matcher
+    .RequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors
+    .CorsConfigurationSource;
+import org.springframework.web.cors
+    .UrlBasedCorsConfigurationSource;
 
 @SuppressWarnings("deprecation")
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
-  
+public class SecurityConfig
+    extends WebSecurityConfigurerAdapter {
+
   @Autowired
   private UserDetailsService userDetailsService;
-  
+
   @Override
-  protected void configure(HttpSecurity http) throws Exception {
+  protected void configure(
+      HttpSecurity http)
+      throws Exception {
+
+    RequestMatcher nonBrowserRequest =
+        new OrRequestMatcher(
+            new AntPathRequestMatcher(
+                "/api/**"),
+            new AntPathRequestMatcher(
+                "/data-api/**"),
+            new AntPathRequestMatcher(
+                "/actuator/**"));
+
     http
-      .authorizeRequests()
-        .antMatchers(HttpMethod.OPTIONS).permitAll() // needed for Angular/CORS
-        .antMatchers(HttpMethod.POST, "/api/ingredients").permitAll()
-        .antMatchers("/api/tacos/**", "/api/orders/**")
+        .cors()
+          .configurationSource(
+              corsConfigurationSource())
+
+      .and()
+        .authorizeRequests()
+
+          .antMatchers(
+              HttpMethod.OPTIONS,
+              "/**")
             .permitAll()
-            //.access("hasRole('ROLE_USER')")
-        .antMatchers(HttpMethod.PATCH, "/api/ingredients").permitAll()
-        .antMatchers("/**").access("permitAll")
-        
+
+          .antMatchers(
+              "/",
+              "/home",
+              "/login",
+              "/register",
+              "/csrf",
+              "/error",
+              "/index.html",
+              "/favicon.ico",
+              "/*.js",
+              "/*.js.map",
+              "/*.css",
+              "/*.png",
+              "/assets/**",
+              "/images/**",
+              "/css/**",
+              "/js/**",
+              "/webjars/**")
+            .permitAll()
+
+          .antMatchers(
+              HttpMethod.GET,
+              "/actuator/health",
+              "/actuator/health/**")
+            .permitAll()
+
+          .antMatchers("/actuator/**")
+            .hasRole("ADMIN")
+
+          .antMatchers("/data-api/**")
+            .hasRole("ADMIN")
+
+          .antMatchers("/api/kitchen/**")
+            .hasAnyRole(
+                "KITCHEN",
+                "ADMIN")
+
+          .antMatchers(
+              "/api/users/me/favorites/**")
+            .hasAnyRole(
+                "USER",
+                "ADMIN")
+
+          .antMatchers(
+              HttpMethod.PUT,
+              "/api/tacos/*/rating")
+            .hasAnyRole(
+                "USER",
+                "ADMIN")
+
+          .antMatchers(
+              HttpMethod.GET,
+              "/api/tacos/top")
+            .permitAll()
+
+          .antMatchers(
+              HttpMethod.GET,
+              "/api/tacos/**",
+              "/api/ingredients/**")
+            .permitAll()
+
+          .antMatchers("/api/admin/**")
+            .hasRole("ADMIN")
+
+          .antMatchers("/api/tacos/**")
+            .hasRole("ADMIN")
+
+          .antMatchers("/api/ingredients/**")
+            .hasRole("ADMIN")
+
+          .antMatchers("/api/orders/**")
+            .hasAnyRole(
+                "USER",
+                "ADMIN")
+
+          .antMatchers(
+              "/design",
+              "/orders/**")
+            .hasAnyRole(
+                "USER",
+                "ADMIN")
+
+          .antMatchers("/h2-console/**")
+            .hasRole("ADMIN")
+
+          .antMatchers(HttpMethod.POST,"/api/payment-methods/tokenize")
+          .hasAnyRole("USER", "ADMIN")
+
+          .anyRequest()
+            .denyAll()
+
+      .and()
+        .exceptionHandling()
+          .defaultAuthenticationEntryPointFor(
+              new HttpStatusEntryPoint(
+                  HttpStatus.UNAUTHORIZED),
+              nonBrowserRequest)
+
       .and()
         .formLogin()
           .loginPage("/login")
-          
+          .permitAll()
+
       .and()
         .httpBasic()
           .realmName("Taco Cloud")
-          
+
       .and()
         .logout()
           .logoutSuccessUrl("/")
-          
+          .permitAll()
+
       .and()
         .csrf()
-          .ignoringAntMatchers("/h2-console/**", "/api/**")
+          .ignoringAntMatchers(
+              "/h2-console/**")
 
-      // Allow pages to be loaded in frames from the same origin; needed for H2-Console
-      .and()  
+      .and()
         .headers()
           .frameOptions()
-            .sameOrigin()
-      ;
+            .sameOrigin();
+  }
+
+  @Bean
+  public CorsConfigurationSource
+      corsConfigurationSource() {
+
+    CorsConfiguration configuration =
+        new CorsConfiguration();
+
+    configuration.setAllowedOrigins(
+        List.of(
+            "http://localhost:8080",
+            "http://localhost:4200"));
+
+    configuration.setAllowedMethods(
+        List.of(
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "OPTIONS"));
+
+    configuration.setAllowedHeaders(
+        List.of(
+            "Authorization",
+            "Content-Type",
+            "X-CSRF-TOKEN",
+            "X-XSRF-TOKEN"));
+
+    configuration.setExposedHeaders(
+        List.of("Location"));
+
+    configuration.setAllowCredentials(true);
+
+    UrlBasedCorsConfigurationSource source =
+        new UrlBasedCorsConfigurationSource();
+
+    source.registerCorsConfiguration(
+        "/api/**",
+        configuration);
+    source.registerCorsConfiguration(
+        "/register",
+        configuration);
+    source.registerCorsConfiguration(
+        "/csrf",
+        configuration);
+
+    return source;
   }
 
   @Bean
   public PasswordEncoder encoder() {
-//    return new StandardPasswordEncoder("53cr3t");
-    return NoOpPasswordEncoder.getInstance();
+    return PasswordEncoderFactories
+        .createDelegatingPasswordEncoder();
   }
-  
-  
+
   @Override
-  protected void configure(AuthenticationManagerBuilder auth)
+  protected void configure(
+      AuthenticationManagerBuilder auth)
       throws Exception {
 
     auth
-      .userDetailsService(userDetailsService)
-      .passwordEncoder(encoder());
-    
+        .userDetailsService(
+            userDetailsService)
+        .passwordEncoder(encoder());
   }
-
 }

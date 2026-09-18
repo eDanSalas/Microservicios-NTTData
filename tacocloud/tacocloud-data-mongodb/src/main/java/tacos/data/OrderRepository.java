@@ -7,10 +7,9 @@ import reactor.core.publisher.Flux;
 import tacos.TacoOrder;
 import tacos.User;
 
-public interface OrderRepository 
-         extends ReactiveCrudRepository<TacoOrder, String> {
+public interface OrderRepository extends ReactiveCrudRepository<TacoOrder, String> {
 
-  Flux<TacoOrder> findByUserOrderByPlacedAtDesc(
-          User user, Pageable pageable);
+  Flux<TacoOrder> findByUserOrderByPlacedAtDesc(User user, Pageable pageable);
+  Flux<TacoOrder> findByUser_IdOrderByPlacedAtDesc(String userId);
 
 }

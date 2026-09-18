@@ -1,22 +1,25 @@
 package tacos;
-import java.util.Arrays;
 import java.util.Collection;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.
                                           SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import lombok.AccessLevel;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.springframework.data.mongodb.core.index.Indexed;
+import lombok.ToString;
+
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Data
-@NoArgsConstructor(access=AccessLevel.PRIVATE, force=true)
-@RequiredArgsConstructor
 @Document
 public class User implements UserDetails {
 
@@ -25,8 +28,13 @@ public class User implements UserDetails {
   @Id
   private String id;
   
+  @Indexed(
+    unique = true,
+    name = "uk_user_username")
   private final String username;
   
+  @JsonIgnore
+  @ToString.Exclude
   private final String password;
   private final String fullname;
   private final String street;
@@ -34,11 +42,40 @@ public class User implements UserDetails {
   private final String state;
   private final String zip;
   private final String phoneNumber;
+  @Indexed(
+    unique = true,
+    name = "uk_user_email")
   private final String email;
   
+  private Set<UserRole> roles = EnumSet.of(UserRole.USER);
+
+  @PersistenceCreator
+  public User(String username, String password, String fullname,
+      String street, String city, String state, String zip,
+      String phoneNumber, String email) {
+    this.username = username;
+    this.password = password;
+    this.fullname = fullname;
+    this.street = street;
+    this.city = city;
+    this.state = state;
+    this.zip = zip;
+    this.phoneNumber = phoneNumber;
+    this.email = email;
+  }
+
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"));
+    Set<UserRole> effectiveRoles =
+        roles == null || roles.isEmpty()
+            ? EnumSet.of(UserRole.USER)
+            : roles;
+
+    return effectiveRoles.stream()
+        .map(role ->
+            new SimpleGrantedAuthority(
+                role.authority()))
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   @Override

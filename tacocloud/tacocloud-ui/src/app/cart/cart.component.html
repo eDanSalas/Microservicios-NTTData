@@ -27,17 +27,8 @@
             <tr *ngFor="let item of cartItems">
               <td>
                 <select [(ngModel)]="item.quantity">
-                  <option value="0">Remove</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                  <option value="7">7</option>
-                  <option value="8">8</option>
-                  <option value="9">9</option>
-                  <option value="10">10</option>
+                  <option [ngValue]="0">Remove</option>
+                  <option *ngFor="let quantity of [1,2,3,4,5,6,7,8,9,10]" [ngValue]="quantity">{{quantity}}</option>
                 </select>
               </td>
               <td>The "<span class="caps">{{item.taco.name}}</span>"</td>
@@ -53,13 +44,13 @@
                 </span>
                 <span *ngIf="(item.taco.ingredients | wraps)?.length == 0">in a bowl</span>
                 </td>
-              <td align="right">{{4.99 * item.quantity | currency}}</td>
+              <td align="right">{{item.lineTotal | currency:'MXN'}}</td>
             </tr>
           </tbody>
           <tfoot>
             <tr>
               <td colspan="3" align="right">Total:</td>
-              <td align="right"><span>{{cartTotal | currency}}</span></td>
+              <td align="right"><span>{{cartTotal | currency:'MXN'}}</span></td>
             </tr>
           </tfoot>
         </table>
@@ -141,21 +132,23 @@
       </div>
 
       <div class="groupBox groupBoxHalf">
-        <div class="groupBoxTitle">Here's how I'll pay...</div>
+        <div class="groupBoxTitle">Payment method</div>
         <div class="groupBoxContent">
-          <label for="ccNumber">Credit Card #: </label>
-          <input type="text" [(ngModel)]="model.ccNumber" name="ccNumber"/>
-          <br/>
+          <label for="paymentMethodId">Payment method ID: </label>
+          <input type="text" [(ngModel)]="model.paymentMethodId" name="paymentMethodId"/>
+        </div>
+      </div>
 
-          <label for="ccExpiration">Expiration / CVV: </label>
-          <input type="text" [(ngModel)]="model.ccExpiration" name="ccExpiration"/>
-          <input type="text" [(ngModel)]="model.ccCVV" name="ccCVV" size="4"/>
+      <div class="groupBox groupBoxHalf">
+        <div class="groupBoxTitle">Coupon</div>
+        <div class="groupBoxContent">
+          <label for="couponCode">Coupon code: </label>
+          <input type="text" [(ngModel)]="model.couponCode" name="couponCode" maxlength="40"/>
         </div>
       </div>
 
       <br/>
 
       <big-button label="Submit Order"></big-button>
-      <!-- <input type="submit" value="Submit order"/> -->
     </form>
 </div>

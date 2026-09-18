@@ -11,34 +11,45 @@
     <section layout:fragment="main" class="content">
       <h1>Register</h1>
       
-      <form method="POST" th:action="@{/register}" id="registerForm">
+      <form method="POST" th:action="@{/register}" th:object="${registrationForm}" id="registerForm">
       
           <label for="username">Username: </label>
-          <input type="text" name="username"/><br/>
+          <input type="text" th:field="*{username}"/>
+          <span th:errors="*{username}"></span>
+          <br/>
+
+          <label for="email">Email: </label>
+          <input type="email" th:field="*{email}"/>
+          <span th:errors="*{email}"></span>
+          <br/>
   
           <label for="password">Password: </label>
-          <input type="password" name="password"/><br/>
+          <input type="password" th:field="*{password}"/>
+          <span th:errors="*{password}"></span>
+          <br/>
   
           <label for="confirm">Confirm password: </label>
-          <input type="password" name="confirm"/><br/>
+          <input type="password" th:field="*{confirm}"/>
+          <span th:errors="*{passwordConfirmed}"></span>
+          <br/>
   
           <label for="fullname">Full name: </label>
-          <input type="text" name="fullname"/><br/>
+          <input type="text" th:field="*{fullname}"/>
       
           <label for="street">Street: </label>
-          <input type="text" name="street"/><br/>
+          <input type="text" th:field="*{street}"/><br/>
       
           <label for="city">City: </label>
-          <input type="text" name="city"/><br/>
+          <input type="text" th:field="*{city}"/><br/>
       
           <label for="state">State: </label>
-          <input type="text" name="state"/><br/>
+          <input type="text" th:field="*{state}"/><br/>
       
           <label for="zip">Zip: </label>
-          <input type="text" name="zip"/><br/>
+          <input type="text" th:field="*{zip}"/><br/>
       
           <label for="phone">Phone: </label>
-          <input type="text" name="phone"/><br/>
+          <input type="text" th:field="*{phone}"/><br/>
       
           <input type="submit" value="Register"/>
       </form>

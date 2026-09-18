@@ -21,11 +21,16 @@ taco:
 # tag::springBootAdminCreds[]
 # tag::springBootAdminUri[]
 spring:
+  mongodb:
+    embedded:
+      version: 4.0.12
 # end::springBootAdminUri[]
 # end::springBootAdminCreds[]
   application:
     name: taco-cloud
   data:
+    mongodb:
+      auto-index-creation: true
     rest:
       base-path: /data-api
     cassandra:
@@ -65,14 +70,19 @@ management:
   endpoints:
     web:
       exposure:
-        include: '*'
+        include:
+          - health
+          - info
+          - metrics
 #end::exposeAll[]
         exclude: threaddump,heapdump
 #end::excludeSome[]
 #tag::healthShowDetails[]
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
+      roles:
+        - ADMIN
 #end::healthShowDetails[]
 #tag::infoGitModeFull[]
   info:

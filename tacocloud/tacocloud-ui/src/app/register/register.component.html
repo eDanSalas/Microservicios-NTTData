@@ -1,0 +1,28 @@
+<cloud-title>Create your Taco Cloud account</cloud-title>
+
+<group-box title="Register">
+  <form #registrationForm="ngForm" (ngSubmit)="register()">
+    <label for="username"><b>Username:</b></label><br/>
+    <input id="username" type="text" name="username" [(ngModel)]="model.username" minlength="3" maxlength="50" required class="formField"/><br/>
+    <label for="email"><b>Email:</b></label><br/>
+    <input id="email" type="email" name="email" [(ngModel)]="model.email" maxlength="254" required class="formField"/><br/>
+    <label for="password"><b>Password:</b></label><br/>
+    <input id="password" type="password" name="password" [(ngModel)]="model.password" minlength="8" maxlength="72" required class="formField"/><br/>
+    <label for="confirm"><b>Confirm password:</b></label><br/>
+    <input id="confirm" type="password" name="confirm" [(ngModel)]="model.confirm" required class="formField"/><br/>
+    <label for="fullname"><b>Full name:</b></label><br/>
+    <input id="fullname" type="text" name="fullname" [(ngModel)]="model.fullname" maxlength="100" required class="formField"/><br/>
+    <label for="street"><b>Street:</b></label><br/>
+    <input id="street" type="text" name="street" [(ngModel)]="model.street" maxlength="120" required class="formField"/><br/>
+    <label for="city"><b>City:</b></label><br/>
+    <input id="city" type="text" name="city" [(ngModel)]="model.city" maxlength="80" required class="formField"/><br/>
+    <label for="state"><b>State:</b></label><br/>
+    <input id="state" type="text" name="state" [(ngModel)]="model.state" maxlength="80" required class="formField"/><br/>
+    <label for="zip"><b>Zip code:</b></label><br/>
+    <input id="zip" type="text" name="zip" [(ngModel)]="model.zip" pattern="[0-9]{5}" required class="formField"/><br/>
+    <label for="phone"><b>Phone number:</b></label><br/>
+    <input id="phone" type="text" name="phone" [(ngModel)]="model.phone" maxlength="30" required class="formField"/><br/>
+    <p class="error" *ngIf="error">{{error}}</p>
+    <button type="submit" [disabled]="registrationForm.invalid || model.password !== model.confirm || submitting || !csrf">Register</button>
+  </form>
+</group-box>

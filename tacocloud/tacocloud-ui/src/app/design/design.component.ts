@@ -14,7 +14,7 @@ export class DesignComponent implements OnInit {
 
   model = {
     name: '',
-    ingredients: []
+    ingredientIds: []
   };
 
   allIngredients: any;
@@ -31,7 +31,7 @@ export class DesignComponent implements OnInit {
   ngOnInit() {
     this.httpClient.get('http://localhost:8080/api/ingredients')
         .subscribe(data => {
-          this.allIngredients = data;
+          this.allIngredients = (<any[]>data).filter(ingredient => ingredient.available);
           this.wraps = this.allIngredients.filter(w => w.type === 'WRAP');
           this.proteins = this.allIngredients.filter(p => p.type === 'PROTEIN');
           this.veggies = this.allIngredients.filter(v => v.type === 'VEGGIES');
@@ -43,9 +43,9 @@ export class DesignComponent implements OnInit {
 
   updateIngredients(ingredient, event) {
     if (event.target.checked) {
-      this.model.ingredients.push(ingredient);
+      this.model.ingredientIds.push(ingredient.id);
     } else {
-      this.model.ingredients.splice(this.model.ingredients.findIndex(i => i === ingredient), 1);
+      this.model.ingredientIds.splice(this.model.ingredientIds.indexOf(ingredient.id), 1);
     }
   }
 

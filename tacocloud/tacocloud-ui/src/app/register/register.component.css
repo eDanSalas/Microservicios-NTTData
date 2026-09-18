@@ -1,0 +1,17 @@
+input.formField {
+  font-size: 16pt;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #003366;
+  margin-bottom: 12px;
+}
+
+.error {
+  color: #b00020;
+  font-weight: bold;
+}
+
+button {
+  font-size: 16pt;
+  padding: 8px 18px;
+}

@@ -12,21 +12,24 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.edge.EdgeOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.TestPropertySource;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@TestPropertySource("classpath:taco-test.properties")
 public class DesignTacoControllerBrowserTest {
 
-  private static ChromeDriver browser;
+  private static EdgeDriver browser;
 
   @LocalServerPort
   private int port;
@@ -35,16 +38,21 @@ public class DesignTacoControllerBrowserTest {
   TestRestTemplate rest;
 
   @BeforeAll
-  public static void openBrowser() {
-    WebDriverManager.chromedriver().setup();
-    browser = new ChromeDriver();
+  public static void openBrowser() throws java.net.MalformedURLException {
+    WebDriverManager manager = WebDriverManager.edgedriver();
+    manager.config().setEdgeDriverUrl(new java.net.URL("https://msedgedriver.microsoft.com/"));
+    manager.config().setEdgeDownloadUrlPattern("https://msedgedriver.microsoft.com/%s/edgedriver_%s%s.zip");
+    manager.setup();
+    browser = new EdgeDriver(new EdgeOptions().addArguments("--headless=new"));
     browser.manage().timeouts()
         .implicitlyWait(10, TimeUnit.SECONDS);
   }
 
   @AfterAll
   public static void closeBrowser() {
-    browser.quit();
+    if (browser != null) {
+      browser.quit();
+    }
   }
 
   @Test
@@ -52,7 +60,7 @@ public class DesignTacoControllerBrowserTest {
   public void testDesignATacoPage() throws Exception {
     browser.get("http://localhost:" + port + "/api/tacos");
 
-    List<WebElement> ingredientGroups = browser.findElementsByClassName("ingredient-group");
+    List<WebElement> ingredientGroups = browser.findElements(By.className("ingredient-group"));
     assertThat(ingredientGroups).hasSize(5);
 
     WebElement wrapGroup = ingredientGroups.get(0);

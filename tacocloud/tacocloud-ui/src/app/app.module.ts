@@ -29,6 +29,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { OAuthModule } from 'angular-oauth2-oidc';
 import { CartComponent } from './cart/cart.component';
 import { CartService } from './cart/cart-service';
+import { RegisterComponent } from './register/register.component';
 
 @NgModule({
   declarations: [
@@ -36,6 +37,7 @@ import { CartService } from './cart/cart-service';
     HeaderComponent,
     HomeComponent,
     LoginComponent,
+    RegisterComponent,
     FooterComponent,
     RecentTacosComponent,
     SpecialsComponent,

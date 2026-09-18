@@ -1,0 +1,602 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] taco-cloud-parent                                                  [pom]
+[INFO] tacocloud-domain                                                   [jar]
+[INFO] tacocloud-data-mongodb                                             [jar]
+[INFO] tacocloud-security                                                 [jar]
+[INFO] tacocloud-messaging-noop                                           [jar]
+[INFO] tacocloud-api                                                      [jar]
+[INFO] tacocloud-ui                                                       [jar]
+[INFO] tacocloud-jmx                                                      [jar]
+[INFO] taco-cloud                                                         [jar]
+[INFO] tacocloud-email                                                    [jar]
+[INFO] tacocloud-kitchen                                                  [jar]
+[INFO] tacocloud-messaging-jms                                            [jar]
+[INFO] tacocloud-messaging-kafka                                          [jar]
+[INFO] tacocloud-messaging-rabbitmq                                       [jar]
+[INFO] tacocloud-restclient                                               [jar]
+[INFO] tacocloud-web                                                      [jar]
+[INFO] 
+[INFO] -----------------------< sia:taco-cloud-parent >------------------------
+[INFO] Building taco-cloud-parent 0.0.17-SNAPSHOT                        [1/16]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --------------------< sia:tacocloud-domain-mongodb >--------------------
+[INFO] Building tacocloud-domain 0.0.17-SNAPSHOT                         [2/16]
+[INFO]   from tacocloud-domain-mongodb\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-domain-mongodb ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-domain-mongodb\src\main\resources
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-domain-mongodb\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-domain-mongodb ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-domain-mongodb ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-domain-mongodb\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-domain-mongodb ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-domain-mongodb ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-domain-mongodb ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-domain-mongodb\target\tacocloud-domain-mongodb-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] ---------------------< sia:tacocloud-data-mongodb >---------------------
+[INFO] Building tacocloud-data-mongodb 0.0.17-SNAPSHOT                   [3/16]
+[INFO]   from tacocloud-data-mongodb\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-data-mongodb ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-data-mongodb\src\main\resources
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-data-mongodb\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-data-mongodb ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 5 source files to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-data-mongodb\target\classes
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-data-mongodb ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-data-mongodb\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-data-mongodb ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-data-mongodb ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-data-mongodb ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-data-mongodb\target\tacocloud-data-mongodb-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] -----------------------< sia:tacocloud-security >-----------------------
+[INFO] Building tacocloud-security 0.0.17-SNAPSHOT                       [4/16]
+[INFO]   from tacocloud-security\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-security ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-security\src\main\resources
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-security\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-security ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 4 source files to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-security\target\classes
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-security ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-security\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-security ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-security ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-security ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-security\target\tacocloud-security-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] --------------------< sia:tacocloud-messaging-noop >--------------------
+[INFO] Building tacocloud-messaging-noop 0.0.17-SNAPSHOT                 [5/16]
+[INFO]   from tacocloud-messaging-noop\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-messaging-noop ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 0 resource
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-messaging-noop ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 2 source files to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-messaging-noop\target\classes
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-messaging-noop ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-messaging-noop\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-messaging-noop ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-messaging-noop ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-messaging-noop ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-messaging-noop\target\tacocloud-messaging-noop-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] -------------------------< sia:tacocloud-api >--------------------------
+[INFO] Building tacocloud-api 0.0.17-SNAPSHOT                            [6/16]
+[INFO]   from tacocloud-api\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-api ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 0 resource
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-api ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 5 source files to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-api\target\classes
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-api ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-api\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-api ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 1 source file to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-api\target\test-classes
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-api ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-api ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-api\target\tacocloud-api-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] --------------------------< sia:tacocloud-ui >--------------------------
+[INFO] Building tacocloud-ui 0.0.17-SNAPSHOT                             [7/16]
+[INFO]   from tacocloud-ui\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- frontend:1.4:install-node-and-npm (install node and npm) @ tacocloud-ui ---
+[INFO] Node v12.22.9 is already installed.
+[INFO] NPM 6.14.15 is already installed.
+[INFO] 
+[INFO] --- frontend:1.4:npm (npm install) @ tacocloud-ui ---
+[INFO] Running 'npm install' in C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-ui
+[WARNING] npm WARN codelyzer@3.2.2 requires a peer of @angular/compiler@^2.3.1 || >=4.0.0-beta <5.0.0 but none is installed. You must install peer dependencies yourself.
+[WARNING] npm WARN codelyzer@3.2.2 requires a peer of @angular/core@^2.3.1 || >=4.0.0-beta <5.0.0 but none is installed. You must install peer dependencies yourself.
+[WARNING] npm WARN optional SKIPPING OPTIONAL DEPENDENCY: fsevents@1.2.13 (node_modules\fsevents):
+[WARNING] npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for fsevents@1.2.13: wanted {"os":"darwin","arch":"any"} (current: {"os":"win32","arch":"x64"})
+[WARNING] npm WARN optional SKIPPING OPTIONAL DEPENDENCY: fsevents@2.3.3 (node_modules\watchpack\node_modules\fsevents):
+[WARNING] npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for fsevents@2.3.3: wanted {"os":"darwin","arch":"any"} (current: {"os":"win32","arch":"x64"})
+[ERROR] 
+[ERROR] npm notice This endpoint is being retired. Use the bulk advisory endpoint instead. See the following docs for more info: https://api-docs.npmjs.com/#tag/Audit
+[INFO] audited 1318 packages in 3s
+[INFO] 
+[INFO] 119 packages are looking for funding
+[INFO]   run `npm fund` for details
+[INFO] 
+[INFO] found 274 vulnerabilities (16 low, 111 moderate, 126 high, 21 critical)
+[INFO]   run `npm audit fix` to fix them, or `npm audit` for details
+[INFO] 
+[INFO] --- frontend:1.4:npm (build) @ tacocloud-ui ---
+[INFO] Running 'npm run-script build' in C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-ui
+[INFO] 
+[INFO] > taco-web-ui@0.0.0 build C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-ui
+[INFO] > ng build --dev
+[INFO] 
+[INFO] Date: 2026-09-12T21:16:42.668Z
+[INFO] Hash: c81606c603f2fa5e9baa
+[INFO] Time: 2859ms
+[INFO] chunk {inline} inline.bundle.js, inline.bundle.js.map (inline) 3.89 kB [entry] [rendered]
+[INFO] chunk {main} main.bundle.js, main.bundle.js.map (main) 101 kB [initial] [rendered]
+[INFO] chunk {polyfills} polyfills.bundle.js, polyfills.bundle.js.map (polyfills) 218 kB [initial] [rendered]
+[INFO] chunk {styles} styles.bundle.js, styles.bundle.js.map (styles) 14.5 kB [initial] [rendered]
+[INFO] chunk {vendor} vendor.bundle.js, vendor.bundle.js.map (vendor) 3.81 MB [initial] [rendered]
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-ui ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 20 resources
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-ui ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-ui ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-ui\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-ui ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-ui ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-ui ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-ui\target\tacocloud-ui-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] -------------------------< sia:tacocloud-jmx >--------------------------
+[INFO] Building tacocloud-jmx 0.0.17-SNAPSHOT                            [8/16]
+[INFO]   from tacocloud-jmx\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-jmx ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 0 resource
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-jmx ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 1 source file to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-jmx\target\classes
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-jmx ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-jmx\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-jmx ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-jmx ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-jmx ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-jmx\target\tacocloud-jmx-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] ---------------------------< sia:tacocloud >----------------------------
+[INFO] Building taco-cloud 0.0.17-SNAPSHOT                               [9/16]
+[INFO]   from tacocloud\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- git-commit-id:4.9.10:revision (default) @ tacocloud ---
+[INFO] dotGitDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\.git
+[INFO] Collected git.build.user.name with value eDanSaMa
+[INFO] Collected git.build.user.email with value danielsalasmtz11@gmail.com
+[INFO] Collected git.branch with value main
+[INFO] --always = true
+[INFO] --dirty = -dirty
+[INFO] --abbrev = 7
+[INFO] Tag refs [[]]
+[INFO] Created map: [{}]
+[INFO] evalCommit is [8a6ac4a18cc828dfd1f2ad49fbd6642fb789a6d5]
+[INFO] Collected git.commit.id.describe with value 8a6ac4a-dirty
+[INFO] Collected git.commit.id.describe-short with value 8a6ac4a-dirty
+[INFO] Collected git.commit.id with value 8a6ac4a18cc828dfd1f2ad49fbd6642fb789a6d5
+[INFO] Collected git.commit.id.abbrev with value 8a6ac4a
+[INFO] Collected git.dirty with value true
+[INFO] Collected git.commit.user.name with value Hector Oropeza
+[INFO] Collected git.commit.user.email with value rhinohop@gmail.com
+[INFO] Collected git.commit.message.full with value Merge pull request #1 from DanyGHub/fix/TCP-dependencias
+
+Fix/tcp dependencias
+[INFO] Collected git.commit.message.short with value Merge pull request #1 from DanyGHub/fix/TCP-dependencias
+[INFO] Collected git.commit.time with value 2026-08-28T13:13:29-0600
+[INFO] Collected git.commit.author.time with value 2026-08-28T13:13:29-0600
+[INFO] Collected git.commit.committer.time with value 2026-08-28T13:13:29-0600
+[INFO] Collected git.remote.origin.url with value https://github.com/rhinohop/Taco-Cloud-Practice.git
+[INFO] Collected git.tags with value 
+[INFO] evalCommit is [8a6ac4a18cc828dfd1f2ad49fbd6642fb789a6d5]
+[INFO] Tag refs [[]]
+[INFO] Created map: [{}]
+[INFO] Collected git.closest.tag.name with value 
+[INFO] evalCommit is [8a6ac4a18cc828dfd1f2ad49fbd6642fb789a6d5]
+[INFO] Tag refs [[]]
+[INFO] Created map: [{}]
+[INFO] Collected git.closest.tag.commit.count with value 
+[INFO] Collected git.total.commit.count with value 7
+[INFO] Collected git.local.branch.ahead with value 0
+[INFO] Collected git.local.branch.behind with value 0
+[INFO] Collected git.build.time with value 2026-09-12T15:16:46-0600
+[INFO] Collected git.build.version with value 0.0.17-SNAPSHOT
+[INFO] Collected git.build.host with value EDan-ROG
+[INFO] including property git.tags in results
+[INFO] including property git.build.version in results
+[INFO] including property git.branch in results
+[INFO] including property git.build.host in results
+[INFO] including property git.commit.id in results
+[INFO] including property git.commit.user.email in results
+[INFO] including property git.local.branch.behind in results
+[INFO] including property git.commit.author.time in results
+[INFO] including property git.build.user.name in results
+[INFO] including property git.dirty in results
+[INFO] including property git.closest.tag.commit.count in results
+[INFO] including property git.commit.user.name in results
+[INFO] including property git.commit.id.abbrev in results
+[INFO] including property git.commit.id.describe-short in results
+[INFO] including property git.total.commit.count in results
+[INFO] including property git.commit.id.describe in results
+[INFO] including property git.build.user.email in results
+[INFO] including property git.commit.message.short in results
+[INFO] including property git.commit.committer.time in results
+[INFO] including property git.closest.tag.name in results
+[INFO] including property git.local.branch.ahead in results
+[INFO] including property git.commit.time in results
+[INFO] including property git.build.time in results
+[INFO] including property git.commit.message.full in results
+[INFO] including property git.remote.origin.url in results
+[INFO] Reading existing properties file [C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud\target\classes\git.properties] (for module taco-cloud)...
+[INFO] Properties file [C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud\target\classes\git.properties] is up-to-date (for module taco-cloud)...
+[INFO] 
+[INFO] --- spring-boot:2.7.18:build-info (default) @ tacocloud ---
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 0 resource
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 6 source files to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud\target\classes
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 5 source files to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud\target\test-classes
+[INFO] /C:/Users/danie/Documents/Taco-Cloud-Practice/tacocloud/tacocloud/src/test/java/tacos/DesignTacoControllerBrowserTest.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/danie/Documents/Taco-Cloud-Practice/tacocloud/tacocloud/src/test/java/tacos/DesignTacoControllerBrowserTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud\target\tacocloud-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] --- spring-boot:2.7.18:repackage (repackage) @ tacocloud ---
+[INFO] Replacing main artifact with repackaged archive
+[INFO] 
+[INFO] ------------------------< sia:tacocloud-email >-------------------------
+[INFO] Building tacocloud-email 0.0.17-SNAPSHOT                         [10/16]
+[INFO]   from tacocloud-email\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-email ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 0 resource
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-email ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-email ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-email\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-email ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-email ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-email ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-email\target\tacocloud-email-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] -----------------------< sia:tacocloud-kitchen >------------------------
+[INFO] Building tacocloud-kitchen 0.0.17-SNAPSHOT                       [11/16]
+[INFO]   from tacocloud-kitchen\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 1 problem was encountered while building the effective model for org.javassist:javassist:jar:3.20.0-GA during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-kitchen ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 2 resources
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-kitchen ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-kitchen ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-kitchen\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-kitchen ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-kitchen ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-kitchen ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-kitchen\target\tacocloud-kitchen-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] --- spring-boot:2.7.18:repackage (repackage) @ tacocloud-kitchen ---
+[INFO] Replacing main artifact with repackaged archive
+[INFO] 
+[INFO] --------------------< sia:tacocloud-messaging-jms >---------------------
+[INFO] Building tacocloud-messaging-jms 0.0.17-SNAPSHOT                 [12/16]
+[INFO]   from tacocloud-messaging-jms\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-messaging-jms ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 0 resource
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-messaging-jms ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 3 source files to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-messaging-jms\target\classes
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-messaging-jms ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-messaging-jms\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-messaging-jms ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-messaging-jms ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-messaging-jms ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-messaging-jms\target\tacocloud-messaging-jms-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] -------------------< sia:tacocloud-messaging-kafka >--------------------
+[INFO] Building tacocloud-messaging-kafka 0.0.17-SNAPSHOT               [13/16]
+[INFO]   from tacocloud-messaging-kafka\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-messaging-kafka ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 0 resource
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-messaging-kafka ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 2 source files to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-messaging-kafka\target\classes
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-messaging-kafka ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-messaging-kafka\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-messaging-kafka ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-messaging-kafka ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-messaging-kafka ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-messaging-kafka\target\tacocloud-messaging-kafka-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] ------------------< sia:tacocloud-messaging-rabbitmq >------------------
+[INFO] Building tacocloud-messaging-rabbitmq 0.0.17-SNAPSHOT            [14/16]
+[INFO]   from tacocloud-messaging-rabbitmq\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-messaging-rabbitmq ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 0 resource
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-messaging-rabbitmq ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 3 source files to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-messaging-rabbitmq\target\classes
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-messaging-rabbitmq ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-messaging-rabbitmq\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-messaging-rabbitmq ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-messaging-rabbitmq ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-messaging-rabbitmq ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-messaging-rabbitmq\target\tacocloud-messaging-rabbitmq-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] ----------------------< sia:tacocloud-restclient >----------------------
+[INFO] Building tacocloud-restclient 0.0.17-SNAPSHOT                    [15/16]
+[INFO]   from tacocloud-restclient\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-restclient ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 16 resources
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-restclient ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 2 source files to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-restclient\target\classes
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-restclient ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-restclient\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-restclient ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-restclient ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-restclient ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-restclient\target\tacocloud-restclient-0.0.17-SNAPSHOT.jar
+[INFO] 
+[INFO] -------------------------< sia:tacocloud-web >--------------------------
+[INFO] Building tacocloud-web 0.0.17-SNAPSHOT                           [16/16]
+[INFO]   from tacocloud-web\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ tacocloud-web ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 0 resource
+[INFO] Copying 16 resources
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ tacocloud-web ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 5 source files to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-web\target\classes
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ tacocloud-web ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-web\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.10.1:testCompile (default-testCompile) @ tacocloud-web ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 3 source files to C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-web\target\test-classes
+[INFO] /C:/Users/danie/Documents/Taco-Cloud-Practice/tacocloud/tacocloud-web/src/test/java/tacos/DesignTacoControllerBrowserTest.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/danie/Documents/Taco-Cloud-Practice/tacocloud/tacocloud-web/src/test/java/tacos/DesignTacoControllerBrowserTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- surefire:2.22.2:test (default-test) @ tacocloud-web ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.2.2:jar (default-jar) @ tacocloud-web ---
+[INFO] Building jar: C:\Users\danie\Documents\Taco-Cloud-Practice\tacocloud\tacocloud-web\target\tacocloud-web-0.0.17-SNAPSHOT.jar
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for taco-cloud-parent 0.0.17-SNAPSHOT:
+[INFO] 
+[INFO] taco-cloud-parent .................................. SUCCESS [  0.003 s]
+[INFO] tacocloud-domain ................................... SUCCESS [  1.120 s]
+[INFO] tacocloud-data-mongodb ............................. SUCCESS [  1.011 s]
+[INFO] tacocloud-security ................................. SUCCESS [  0.804 s]
+[INFO] tacocloud-messaging-noop ........................... SUCCESS [  0.585 s]
+[INFO] tacocloud-api ...................................... SUCCESS [  1.642 s]
+[INFO] tacocloud-ui ....................................... SUCCESS [  9.747 s]
+[INFO] tacocloud-jmx ...................................... SUCCESS [  0.323 s]
+[INFO] taco-cloud ......................................... SUCCESS [  3.947 s]
+[INFO] tacocloud-email .................................... SUCCESS [  0.088 s]
+[INFO] tacocloud-kitchen .................................. SUCCESS [  0.251 s]
+[INFO] tacocloud-messaging-jms ............................ SUCCESS [  0.648 s]
+[INFO] tacocloud-messaging-kafka .......................... SUCCESS [  0.546 s]
+[INFO] tacocloud-messaging-rabbitmq ....................... SUCCESS [  0.548 s]
+[INFO] tacocloud-restclient ............................... SUCCESS [  0.665 s]
+[INFO] tacocloud-web ...................................... SUCCESS [  1.832 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  24.059 s
+[INFO] Finished at: 2026-09-12T15:16:51-06:00
+[INFO] ------------------------------------------------------------------------

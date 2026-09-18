@@ -29,6 +29,7 @@ import { HttpClientModule } from '@angular/common/http';
 
 import { CartComponent } from './cart/cart.component';
 import { CartService } from './cart/cart-service';
+import { RegisterComponent } from './register/register.component';
 
 import { routes } from './app.routes';
 
@@ -40,6 +41,7 @@ describe('AppComponent', () => {
         HeaderComponent,
         HomeComponent,
         LoginComponent,
+        RegisterComponent,
         FooterComponent,
         RecentTacosComponent,
         SpecialsComponent,
