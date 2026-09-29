@@ -13,15 +13,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tacos.User;
 import tacos.data.OrderRepository;
 import tacos.service.EmailOrderSubmissionService;
-import tacos.service.OrderCreationService;
+import tacos.service.IdempotentOrderService;
 import tacos.service.OrderService;
 import tacos.web.api.dto.OrderCreateRequest;
 import tacos.web.api.dto.OrderResponse;
@@ -38,8 +38,8 @@ public class OrderApiController {
   private final EmailOrderSubmissionService
       emailOrderSubmissionService;
   private final OrderService orderService;
-  private final OrderCreationService
-      orderCreationService;
+  private final IdempotentOrderService
+      idempotentOrderService;
   private final OrderMapper orderMapper;
 
   public OrderApiController(
@@ -47,35 +47,30 @@ public class OrderApiController {
       EmailOrderSubmissionService
           emailOrderSubmissionService,
       OrderService orderService,
-      OrderCreationService orderCreationService,
+      IdempotentOrderService idempotentOrderService,
       OrderMapper orderMapper) {
 
     this.repo = repo;
     this.emailOrderSubmissionService =
         emailOrderSubmissionService;
     this.orderService = orderService;
-    this.orderCreationService =
-        orderCreationService;
+    this.idempotentOrderService =
+        idempotentOrderService;
     this.orderMapper = orderMapper;
   }
-
-  @GetMapping
-    public Flux<OrderResponse> allOrders(@AuthenticationPrincipal User authenticatedUser) {
-        return orderService
-            .findVisibleOrders(authenticatedUser)
-            .map(orderMapper::toResponse);
-    }
 
   @PostMapping(consumes = "application/json")
   @ResponseStatus(HttpStatus.CREATED)
   public Mono<OrderResponse> postOrder(
       @Valid @RequestBody
           OrderCreateRequest request,
+      @RequestHeader("Idempotency-Key")
+          String idempotencyKey,
       @AuthenticationPrincipal
           User authenticatedUser) {
 
-    return orderCreationService
-        .create(request, authenticatedUser)
+    return idempotentOrderService
+        .create(request, authenticatedUser, idempotencyKey)
         .map(orderMapper::toResponse);
   }
 

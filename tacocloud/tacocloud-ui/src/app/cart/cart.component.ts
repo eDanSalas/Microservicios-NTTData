@@ -46,10 +46,11 @@ export class CartComponent implements OnInit {
     }));
 
     this.httpClient.post(
-        'http://localhost:8080/api/orders',
+        'http://localhost:8080/api/v1/orders',
         this.model, {
             headers: new HttpHeaders().set('Content-type', 'application/json')
-                    .set('Accept', 'application/json'),
+                    .set('Accept', 'application/json')
+                    .set('Idempotency-Key', 'order-' + Date.now() + '-' + Math.random().toString(36).substring(2)),
         }).subscribe(r => this.cart.emptyCart());
 
   }

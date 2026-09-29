@@ -8,6 +8,8 @@ import { LocationsComponent } from './locations/locations.component';
 import { CartComponent } from './cart/cart.component';
 import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
+import { TopTacosComponent } from './ratings/top-tacos.component';
+import { OrderHistoryComponent } from './orders/order-history.component';
 
 export const routes: Routes = [
   {
@@ -25,6 +27,14 @@ export const routes: Routes = [
   {
     path: 'recents',
     component: RecentTacosComponent
+  },
+  {
+    path: 'top',
+    component: TopTacosComponent
+  },
+  {
+    path: 'orders',
+    component: OrderHistoryComponent
   },
   {
     path: 'specials',

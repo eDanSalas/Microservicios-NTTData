@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
@@ -11,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import tacos.TacoOrder;
 
 public class NoOpOrderMessagingServiceTest {
 
@@ -28,15 +28,12 @@ public class NoOpOrderMessagingServiceTest {
     logger.addAppender(appender);
 
     try {
-      TacoOrder order = new TacoOrder();
-
-      order.setId("order-1");
-      order.setPaymentMethodId("pm-secret");
-      order.setPaymentBrand("VISA");
-      order.setPaymentLast4("1111");
+      OrderEvent event = OrderEvent.create(OrderEventType.ORDER_CREATED,
+          UUID.randomUUID().toString(),
+          new OrderEventPayload("order-1", "CREATED", null, null, List.of()));
 
       new NoOpOrderMessagingService()
-          .sendOrder(order);
+          .sendOrder(event);
 
       List<ILoggingEvent> events =
           appender.list;
@@ -49,10 +46,10 @@ public class NoOpOrderMessagingServiceTest {
           message.contains("order-1"));
 
       assertFalse(
-          message.contains("pm-secret"));
+          message.contains("payment"));
 
       assertFalse(
-          message.contains("1111"));
+          message.contains("password"));
     } finally {
       logger.detachAppender(appender);
       appender.stop();

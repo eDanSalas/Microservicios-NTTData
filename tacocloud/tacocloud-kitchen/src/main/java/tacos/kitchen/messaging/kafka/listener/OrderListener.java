@@ -7,8 +7,9 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
-import tacos.TacoOrder;
 import tacos.kitchen.KitchenUI;
+import tacos.kitchen.KitchenMetrics;
+import tacos.messaging.OrderEvent;
 
 @Profile("kafka-listener")
 @Component
@@ -16,18 +17,21 @@ import tacos.kitchen.KitchenUI;
 public class OrderListener {
   
   private KitchenUI ui;
+  private final KitchenMetrics metrics;
 
   @Autowired
-  public OrderListener(KitchenUI ui) {
+  public OrderListener(KitchenUI ui, KitchenMetrics metrics) {
     this.ui = ui;
+    this.metrics = metrics;
   }
 
-  @KafkaListener(topics="tacocloud.orders.topic")
-  public void handle(TacoOrder order, ConsumerRecord<String, TacoOrder> record) {
+  @KafkaListener(topics = "${tacocloud.messaging.kafka.topic}")
+  public void handle(OrderEvent event, ConsumerRecord<String, OrderEvent> record) {
     log.error("Received from partition {} with timestamp {}",
         record.partition(), record.timestamp());
     
-    ui.displayOrder(order);
+    metrics.received(event, "kafka");
+    ui.displayOrder(event);
   }
   
 }

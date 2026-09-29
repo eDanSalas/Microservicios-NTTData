@@ -1,5 +1,7 @@
 package tacos.web.api.error;
 
+import java.util.Locale;
+
 public enum ApiErrorCode {
 
   VALIDATION_ERROR("Request validation failed"),
@@ -30,5 +32,9 @@ public enum ApiErrorCode {
 
   public String getTitle() {
     return title;
+  }
+
+  public String value() {
+    return name().toLowerCase(Locale.ROOT).replace('_', '-');
   }
 }

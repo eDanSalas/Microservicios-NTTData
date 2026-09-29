@@ -22,11 +22,11 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import tacos.Ingredient;
 import tacos.Ingredient.Type;
+import tacos.OrderStatus;
 import tacos.TacoOrder;
 import tacos.User;
 import tacos.data.IngredientRepository;
-import tacos.data.OrderRepository;
-import tacos.messaging.OrderMessagingService;
+import tacos.outbox.OrderOutboxService;
 import tacos.pricing.CouponProperties;
 import tacos.pricing.CouponRule;
 import tacos.pricing.CouponService;
@@ -41,6 +41,8 @@ import java.util.Date;
 import tacos.PaymentMethod;
 import tacos.data.PaymentMethodRepository;
 import tacos.inventory.InventoryService;
+import tacos.observability.BusinessMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import tacos.InventoryReservation;
 import tacos.physics.TacoDesignValidationException;
 import tacos.physics.AvailableIngredientsRule;
@@ -54,8 +56,7 @@ import tacos.physics.UniqueIngredientsRule;
 public class OrderCreationServiceTest {
 
   private IngredientRepository ingredientRepo;
-  private OrderRepository orderRepo;
-  private OrderMessagingService orderMessages;
+  private OrderOutboxService orderOutbox;
   private OrderCreationService service;
   private PaymentMethodRepository paymentMethodRepo;
   private InventoryService inventoryService;
@@ -64,9 +65,7 @@ public class OrderCreationServiceTest {
   public void setUp() {
     ingredientRepo = Mockito.mock(IngredientRepository.class);
 
-    orderRepo = Mockito.mock(OrderRepository.class);
-
-    orderMessages = Mockito.mock(OrderMessagingService.class);
+    orderOutbox = Mockito.mock(OrderOutboxService.class);
 
     paymentMethodRepo = Mockito.mock(PaymentMethodRepository.class);
     inventoryService = Mockito.mock(InventoryService.class);
@@ -98,14 +97,15 @@ public class OrderCreationServiceTest {
     TacoDesignValidator validator = new TacoDesignValidator(List.of(new BaseCountRule(),
         new IngredientCountRule(2, 12), new UniqueIngredientsRule(), new AvailableIngredientsRule(),
         new ExtremeSpiceRequiresBeverageRule(true), new SauceLimitRule(3)));
-    service = new OrderCreationService(orderRepo, orderMessages, orderMapper,
+    service = new OrderCreationService(orderOutbox, orderMapper,
         paymentMethodRepo, new OrderPricingService(20, "MXN"),
         new CouponService(coupons, Clock.systemUTC()), inventoryService,
-        new TacoDesignService(ingredientRepo, validator));
+        new TacoDesignService(ingredientRepo, validator),
+        new BusinessMetrics(new SimpleMeterRegistry()));
   }
 
   @Test
-  public void shouldResolveSaveAndPublishOrder() {
+  public void shouldResolveAndSaveOrderWithOutbox() {
     User authenticatedUser = testUser();
 
     Ingredient ingredient =
@@ -126,7 +126,7 @@ public class OrderCreationServiceTest {
     when(ingredientRepo.findById("FLTO"))
         .thenReturn(Mono.just(ingredient));
 
-    when(orderRepo.save(
+    when(orderOutbox.save(
             Mockito.any(TacoOrder.class)))
         .thenAnswer(invocation -> {
           TacoOrder saved =
@@ -157,6 +157,9 @@ public class OrderCreationServiceTest {
           assertEquals(new BigDecimal("1.35"), order.getTotal());
           assertEquals("SAVE10", order.getCouponCode());
           assertEquals(2, order.getItems().get(0).getQuantity());
+          assertEquals(OrderStatus.CREATED, order.getStatus());
+          assertEquals(1, order.getStatusHistory().size());
+          assertEquals("owner-1", order.getStatusHistory().get(0).getActorId());
           assertEquals("FLTO", order.getItems().get(0)
                   .getTaco()
                   .getIngredients()
@@ -168,13 +171,10 @@ public class OrderCreationServiceTest {
     verify(ingredientRepo)
         .findById("FLTO");
 
-    verify(orderRepo)
+    verify(orderOutbox)
         .save(
             Mockito.any(TacoOrder.class));
 
-    verify(orderMessages)
-        .sendOrder(
-            Mockito.any(TacoOrder.class));
   }
 
   @Test
@@ -206,8 +206,7 @@ public class OrderCreationServiceTest {
         .verify();
 
     verifyNoInteractions(
-        orderRepo,
-        orderMessages);
+        orderOutbox);
   }
 
   @Test
@@ -215,14 +214,14 @@ public class OrderCreationServiceTest {
     Ingredient ingredient = new Ingredient("FLTO", "Flour Tortilla", Type.WRAP,
         new BigDecimal("0.75"), true, 10, 2, 1L);
     when(ingredientRepo.findById("FLTO")).thenReturn(Mono.just(ingredient));
-    when(orderRepo.save(Mockito.any(TacoOrder.class))).thenReturn(Mono.error(new RuntimeException("save failed")));
+    when(orderOutbox.save(Mockito.any(TacoOrder.class)))
+        .thenReturn(Mono.error(new RuntimeException("save failed")));
 
     StepVerifier.create(service.create(testRequest("FLTO"), testUser()))
         .expectErrorMessage("save failed").verify();
 
     verify(inventoryService).reserve(Mockito.any(TacoOrder.class), Mockito.anyString());
     verify(inventoryService).release(Mockito.anyString());
-    verifyNoInteractions(orderMessages);
   }
 
   @Test
@@ -240,8 +239,7 @@ public class OrderCreationServiceTest {
         .expectError(TacoDesignValidationException.class).verify();
 
     verify(inventoryService, never()).reserve(Mockito.any(), Mockito.anyString());
-    verify(orderRepo, never()).save(Mockito.any());
-    verifyNoInteractions(orderMessages);
+    verify(orderOutbox, never()).save(Mockito.any());
   }
 
   private OrderCreateRequest testRequest(

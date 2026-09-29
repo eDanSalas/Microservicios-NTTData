@@ -23,6 +23,15 @@
           <span class="small">{{taco.classification.disclaimer}}</span>
         </div>
       </div>
+      <button type="button" class="favorite" (click)="toggleFavorite(taco)">
+        {{favoriteIds[taco.id] ? 'Remove favorite' : 'Add favorite'}}
+      </button>
+      <select [(ngModel)]="ratingScores[taco.id]">
+        <option [ngValue]="undefined">Score</option>
+        <option *ngFor="let score of [1, 2, 3, 4, 5]" [ngValue]="score">{{score}}</option>
+      </select>
+      <button type="button" class="rating" (click)="rate(taco)">Rate</button>
+      <span class="ratingResult" *ngIf="ratingMessages[taco.id]">{{ratingMessages[taco.id]}}</span>
       <little-button label="Order this taco"></little-button>
   </div>
 </div>

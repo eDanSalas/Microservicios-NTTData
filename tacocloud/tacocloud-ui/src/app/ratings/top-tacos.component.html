@@ -1,0 +1,12 @@
+<cloud-title>Top rated tacos</cloud-title>
+
+<p *ngIf="ranking.length === 0">No tacos have enough ratings yet.</p>
+
+<ol class="ranking">
+  <li *ngFor="let item of ranking">
+    <b>{{item.taco.name}}</b>
+    <span>{{item.average | number:'1.2-2'}} / 5 from {{item.count}} votes</span>
+    <small>5: {{item.distribution['5']}}, 4: {{item.distribution['4']}},
+      3: {{item.distribution['3']}}, 2: {{item.distribution['2']}}, 1: {{item.distribution['1']}}</small>
+  </li>
+</ol>

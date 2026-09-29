@@ -78,7 +78,7 @@ public class OrderController {
 
     Pageable pageable = PageRequest.of(0, props.getPageSize());
     model.addAttribute("orders", 
-        orderRepo.findByUserOrderByPlacedAtDesc(user, pageable));
+        orderRepo.findByUserIdOrderByPlacedAtDesc(user.getId(), pageable));
     
     return "orderList";
   }

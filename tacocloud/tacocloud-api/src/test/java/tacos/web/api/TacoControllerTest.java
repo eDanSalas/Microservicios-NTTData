@@ -10,12 +10,15 @@ import static org.mockito.Mockito.never;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
+import org.springframework.web.server.ResponseStatusException;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -27,8 +30,12 @@ import tacos.SpiceLevel;
 import tacos.Taco;
 import tacos.data.IngredientRepository;
 import tacos.data.TacoRepository;
+import tacos.data.TacoSearchPage;
+import tacos.data.TacoSearchQuery;
 import tacos.service.TacoClassificationService;
 import tacos.service.TacoDesignService;
+import tacos.service.TacoOfTheDayService;
+import tacos.service.TacoRecommendation;
 import tacos.physics.AvailableIngredientsRule;
 import tacos.physics.BaseCountRule;
 import tacos.physics.ExtremeSpiceRequiresBeverageRule;
@@ -45,6 +52,7 @@ public class TacoControllerTest {
   private TacoRepository tacoRepo;
   private IngredientRepository ingredientRepo;
   private WebTestClient client;
+  private TacoOfTheDayService tacoOfTheDayService;
 
   @BeforeEach
   public void setUp() {
@@ -53,8 +61,57 @@ public class TacoControllerTest {
     TacoClassificationService classification = new TacoClassificationService();
     TacoMapper mapper = new TacoMapper(new IngredientMapper(), classification);
     TacoDesignService designs = new TacoDesignService(ingredientRepo, validator());
-    client = WebTestClient.bindToController(new TacoController(tacoRepo, mapper, classification, designs))
+    tacoOfTheDayService = Mockito.mock(TacoOfTheDayService.class);
+    client = MockMvcWebTestClient.bindToController(new TacoController(tacoRepo, mapper, classification, designs,
+        new TacoSearchQueryFactory(50, 60), tacoOfTheDayService))
         .controllerAdvice(new GlobalApiExceptionHandler()).build();
+  }
+
+  @Test
+  public void shouldReturnTacoOfTheDay() {
+    LocalDate date = LocalDate.of(2026, 9, 20);
+    when(tacoOfTheDayService.recommend())
+        .thenReturn(Mono.just(new TacoRecommendation(testTaco(1L), date, "Porque hoy es " + date)));
+
+    client.get().uri("/api/tacos/today").exchange().expectStatus().isOk().expectBody()
+        .jsonPath("$.taco.id").isEqualTo("1").jsonPath("$.date").isEqualTo("2026-09-20")
+        .jsonPath("$.reason").isEqualTo("Porque hoy es 2026-09-20");
+  }
+
+  @Test
+  public void shouldReturnNotFoundWhenThereIsNoTacoOfTheDay() {
+    when(tacoOfTheDayService.recommend()).thenReturn(Mono.error(
+        new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND,
+            "No available taco candidates")));
+
+    client.get().uri("/api/tacos/today").exchange().expectStatus().isNotFound();
+  }
+
+  @Test
+  public void shouldSearchWithFiltersAndPaginationMetadata() {
+    Taco taco = testTaco(1L);
+    when(tacoRepo.search(any(TacoSearchQuery.class)))
+        .thenReturn(Mono.just(new TacoSearchPage(List.of(taco), 1, 5, 6, 2)));
+
+    client.get().uri("/api/tacos?name=Taco&ingredientId=INGA&diet=vegan&excludeAllergen=peanut"
+        + "&spice=none&page=1&size=5&sort=name,asc").exchange().expectStatus().isOk()
+        .expectBody().jsonPath("$.content[0].id").isEqualTo("1").jsonPath("$.page").isEqualTo(1)
+        .jsonPath("$.size").isEqualTo(5).jsonPath("$.totalElements").isEqualTo(6)
+        .jsonPath("$.totalPages").isEqualTo(2).jsonPath("$.sort").isEqualTo("name,asc");
+    verify(tacoRepo).search(org.mockito.ArgumentMatchers.argThat(query -> query.getDiet() == DietaryTag.VEGAN
+        && query.getExcludeAllergen() == Allergen.PEANUT && query.getSpice() == SpiceLevel.NONE));
+  }
+
+  @Test
+  public void shouldCapPageSizeAndRejectUnsupportedSort() {
+    when(tacoRepo.search(any(TacoSearchQuery.class))).thenAnswer(invocation -> {
+      TacoSearchQuery query = invocation.getArgument(0);
+      return Mono.just(new TacoSearchPage(List.of(), query.getPage(), query.getSize(), 0, 0));
+    });
+
+    client.get().uri("/api/tacos?size=500").exchange().expectStatus().isOk()
+        .expectBody().jsonPath("$.size").isEqualTo(50).jsonPath("$.content").isArray();
+    client.get().uri("/api/tacos?sort=ingredients,asc").exchange().expectStatus().isBadRequest();
   }
 
   @Test

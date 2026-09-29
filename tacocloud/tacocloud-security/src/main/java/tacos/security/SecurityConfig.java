@@ -3,6 +3,7 @@ package tacos.security;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,6 +22,9 @@ import org.springframework.security.crypto.factory
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication
     .HttpStatusEntryPoint;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.util.matcher
     .AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher
@@ -41,6 +45,14 @@ public class SecurityConfig
 
   @Autowired
   private UserDetailsService userDetailsService;
+
+  @Autowired(required = false)
+  @Qualifier("apiProblemSecurityHandler")
+  private AuthenticationEntryPoint apiAuthenticationEntryPoint;
+
+  @Autowired(required = false)
+  @Qualifier("apiProblemSecurityHandler")
+  private AccessDeniedHandler apiAccessDeniedHandler;
 
   @Override
   protected void configure(
@@ -75,6 +87,7 @@ public class SecurityConfig
               "/login",
               "/register",
               "/csrf",
+              "/openapi.yaml",
               "/error",
               "/index.html",
               "/favicon.ico",
@@ -102,15 +115,25 @@ public class SecurityConfig
             .hasRole("ADMIN")
 
           .antMatchers("/api/kitchen/**")
-            .hasAnyRole(
-                "KITCHEN",
-                "ADMIN")
+            .hasRole("KITCHEN")
 
           .antMatchers(
               "/api/users/me/favorites/**")
             .hasAnyRole(
                 "USER",
                 "ADMIN")
+
+          .antMatchers(
+              "/api/users/me/orders/**")
+            .hasAnyRole(
+                "USER",
+                "ADMIN")
+
+          .antMatchers(
+              HttpMethod.GET,
+              "/api/orders",
+              "/api/orders/")
+            .denyAll()
 
           .antMatchers(
               HttpMethod.PUT,
@@ -127,11 +150,26 @@ public class SecurityConfig
           .antMatchers(
               HttpMethod.GET,
               "/api/tacos/**",
-              "/api/ingredients/**")
+              "/api/ingredients/**",
+              "/api/announcements")
             .permitAll()
 
           .antMatchers("/api/admin/**")
             .hasRole("ADMIN")
+
+          .antMatchers(
+              HttpMethod.PATCH,
+              "/api/orders/*/status")
+            .hasAnyRole(
+                "KITCHEN",
+                "ADMIN")
+
+          .antMatchers(
+              HttpMethod.POST,
+              "/api/orders/*/cancel")
+            .hasAnyRole(
+                "USER",
+                "ADMIN")
 
           .antMatchers("/api/tacos/**")
             .hasRole("ADMIN")
@@ -163,9 +201,11 @@ public class SecurityConfig
       .and()
         .exceptionHandling()
           .defaultAuthenticationEntryPointFor(
-              new HttpStatusEntryPoint(
-                  HttpStatus.UNAUTHORIZED),
+              apiAuthenticationEntryPoint != null ? apiAuthenticationEntryPoint
+                  : new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
               nonBrowserRequest)
+          .accessDeniedHandler(apiAccessDeniedHandler != null ? apiAccessDeniedHandler
+              : new AccessDeniedHandlerImpl())
 
       .and()
         .formLogin()
@@ -217,11 +257,18 @@ public class SecurityConfig
         List.of(
             "Authorization",
             "Content-Type",
+            "Idempotency-Key",
+            "X-Correlation-Id",
             "X-CSRF-TOKEN",
             "X-XSRF-TOKEN"));
 
     configuration.setExposedHeaders(
-        List.of("Location"));
+        List.of(
+            "Deprecation",
+            "Link",
+            "Location",
+            "Sunset",
+            "X-Correlation-Id"));
 
     configuration.setAllowCredentials(true);
 

@@ -36,6 +36,18 @@ spring:
     cassandra:
       keyspace-name: tacocloud
       schema-action: recreate
+  artemis:
+    host: ${ARTEMIS_HOST:localhost}
+    port: ${ARTEMIS_PORT:61616}
+    user: ${ARTEMIS_USER:}
+    password: ${ARTEMIS_PASSWORD:}
+    embedded:
+      enabled: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:}
+    password: ${RABBITMQ_PASSWORD:}
 # tag::springBootAdminCreds[]
 # tag::springBootAdminUri[]
   boot:
@@ -50,15 +62,23 @@ spring:
 # The values given here are actually the default values. But they are explicitly
 # set here as an example of setting the Kafka properties.
   kafka:
-    bootstrap-servers:
-    - localhost:9092
-    template:
-      default-topic: tacocloud.orders.topic
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       keySerializer: org.springframework.kafka.support.serializer.JsonSerializer
       valueSerializer: org.springframework.kafka.support.serializer.JsonSerializer
   jmx:
     enabled: true
+
+tacocloud:
+  messaging:
+    transport: ${TACOCLOUD_MESSAGING_TRANSPORT:noop}
+    jms:
+      destination: ${JMS_ORDER_DESTINATION:tacocloud.order.queue}
+    rabbit:
+      exchange: ${RABBIT_ORDER_EXCHANGE:}
+      routing-key: ${RABBIT_ORDER_ROUTING_KEY:tacocloud.order.queue}
+    kafka:
+      topic: ${KAFKA_ORDER_TOPIC:tacocloud.orders.topic}
 
 #tag::exposeAll[]
 #tag::excludeSome[]

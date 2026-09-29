@@ -1,0 +1,24 @@
+ul.orders {
+  list-style: none;
+  max-width: 760px;
+  padding: 0;
+}
+
+ul.orders li,
+.detail {
+  background: rgba(118, 214, 255, 0.25);
+  border: 1px solid #76D6FF;
+  border-radius: 10px;
+  color: #003366;
+  margin: 10px 0;
+  padding: 15px;
+}
+
+ul.orders span {
+  display: block;
+  margin: 5px 0;
+}
+
+.paging span {
+  margin: 0 10px;
+}

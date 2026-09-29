@@ -33,9 +33,10 @@ import static org.springframework.security.test.web.reactive.server.SecurityMock
 
 import tacos.service.EmailOrderSubmissionService;
 
-import tacos.service.OrderCreationService;
+import tacos.service.IdempotentOrderService;
 import tacos.service.TacoClassificationService;
 import tacos.web.api.dto.OrderResponse;
+import tacos.web.api.dto.OrderCreateRequest;
 import tacos.web.api.error.GlobalApiExceptionHandler;
 import tacos.web.api.mapper.IngredientMapper;
 import tacos.web.api.mapper.OrderMapper;
@@ -48,7 +49,7 @@ public class OrderApiControllerTest {
     private OrderService orderService;
     private User authenticatedUser;
     private WebTestClient testClient;
-    private OrderCreationService orderCreationService;
+    private IdempotentOrderService idempotentOrderService;
 
     @BeforeEach
     public void setUp() {
@@ -74,7 +75,7 @@ public class OrderApiControllerTest {
                 null,
                 authenticatedUser.getAuthorities());
 
-        orderCreationService = Mockito.mock(OrderCreationService.class);
+        idempotentOrderService = Mockito.mock(IdempotentOrderService.class);
 
         OrderMapper orderMapper =
             new OrderMapper(
@@ -86,7 +87,7 @@ public class OrderApiControllerTest {
                 orderRepo,
                 emailOrderSubmissionService,
                 orderService,
-                orderCreationService,
+                idempotentOrderService,
                 orderMapper);
 
         testClient = WebTestClient
@@ -101,6 +102,51 @@ public class OrderApiControllerTest {
                     .build()
                     .mutateWith(
                         mockAuthentication(authentication));
+    }
+
+    @Test
+    public void shouldRequireIdempotencyKeyForOrderCreation() {
+        testClient.post()
+            .uri("/api/orders")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(validOrderJson())
+            .exchange()
+            .expectStatus().isBadRequest();
+
+        Mockito.verifyNoInteractions(idempotentOrderService);
+    }
+
+    @Test
+    public void shouldCreateOrderWithIdempotencyKey() {
+        TacoOrder savedOrder = testOrder();
+        Mockito.when(idempotentOrderService.create(
+                Mockito.any(OrderCreateRequest.class),
+                Mockito.same(authenticatedUser),
+                Mockito.eq("order-key-123")))
+            .thenReturn(Mono.just(savedOrder));
+
+        testClient.post()
+            .uri("/api/orders")
+            .header("Idempotency-Key", "order-key-123")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(validOrderJson())
+            .exchange()
+            .expectStatus().isCreated()
+            .expectBody(OrderResponse.class)
+            .value(order -> assertEquals("1L", order.getId()));
+
+        Mockito.verify(idempotentOrderService).create(
+            Mockito.any(OrderCreateRequest.class),
+            Mockito.same(authenticatedUser),
+            Mockito.eq("order-key-123"));
+    }
+
+    private String validOrderJson() {
+        return "{\"deliveryName\":\"Daniel\",\"deliveryStreet\":\"Calle 1\","
+            + "\"deliveryCity\":\"Guadalajara\",\"deliveryState\":\"Jalisco\","
+            + "\"deliveryZip\":\"44100\",\"paymentMethodId\":\"payment-1\","
+            + "\"items\":[{\"quantity\":1,\"taco\":{\"name\":\"Taco uno\","
+            + "\"ingredientIds\":[\"FLTO\",\"GRBF\"]}}]}";
     }
 
     @Test
@@ -160,9 +206,7 @@ public class OrderApiControllerTest {
         "",
         "   "
     })
-    public void shouldRejectBlankPatchValue(
-            String invalidZip) {
-
+    public void shouldRejectBlankPatchValue(String invalidZip) {
         String body =
             "{\"deliveryZip\":\""
                 + invalidZip

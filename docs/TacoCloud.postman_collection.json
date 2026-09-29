@@ -1,0 +1,4889 @@
+{
+  "info": {
+    "_postman_id": "b03aee0d-0fa7-4b8c-aa95-b27a0d081280",
+    "name": "TacoCloud | Retos funcionales TC-01 a TC-36",
+    "description": "Pruebas HTTP de las 36 fichas en docs. Ejecute 00 Preparación antes de los retos que usan {{paymentMethodId}}, {{orderId}}, {{ingredientId}} o {{tacoId}}. Las pruebas generan datos de demostración; use una base de pruebas. Los retos de broker, outbox, concurrencia y Maven incluyen sondas HTTP, pero su verificación completa requiere las pruebas de integración citadas en cada ficha. La colección renueva CSRF y JSESSIONID antes de cada escritura. La cuenta habuma tiene roles USER y ADMIN en DevelopmentConfig; para pruebas positivas de KITCHEN configure kitchenUsername y kitchenPassword.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{username}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{password}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "username",
+      "value": "habuma"
+    },
+    {
+      "key": "password",
+      "value": "password"
+    },
+    {
+      "key": "csrfToken",
+      "value": ""
+    },
+    {
+      "key": "kitchenUsername",
+      "value": ""
+    },
+    {
+      "key": "kitchenPassword",
+      "value": ""
+    },
+    {
+      "key": "runId",
+      "value": ""
+    },
+    {
+      "key": "ingredientId",
+      "value": ""
+    },
+    {
+      "key": "ingredientLocation",
+      "value": ""
+    },
+    {
+      "key": "ingredientTc03Id",
+      "value": ""
+    },
+    {
+      "key": "ingredientTc03Location",
+      "value": ""
+    },
+    {
+      "key": "ingredientVersion",
+      "value": ""
+    },
+    {
+      "key": "paymentMethodId",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "orderTc05Id",
+      "value": ""
+    },
+    {
+      "key": "tacoId",
+      "value": ""
+    },
+    {
+      "key": "announcementId",
+      "value": ""
+    },
+    {
+      "key": "todayTacoId",
+      "value": ""
+    },
+    {
+      "key": "quoteTotal",
+      "value": ""
+    },
+    {
+      "key": "announcementExpiresAt",
+      "value": ""
+    },
+    {
+      "key": "correlationId",
+      "value": ""
+    },
+    {
+      "key": "tacoForPut",
+      "value": ""
+    },
+    {
+      "key": "idempotentOrderId",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('runId')) pm.collectionVariables.set('runId', Date.now().toString(36) + Math.random().toString(36).slice(2, 7));",
+          "pm.collectionVariables.set('announcementExpiresAt', new Date(Date.now() + 86400000).toISOString());",
+          "if (!pm.collectionVariables.get('correlationId')) pm.collectionVariables.set('correlationId', pm.variables.replaceIn('{{$guid}}'));",
+          "const write = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(pm.request.method);",
+          "if (write) {",
+          "  const base = pm.variables.replaceIn('{{baseUrl}}').replace(/\\/$/, '');",
+          "  pm.sendRequest({url: base + '/csrf', method: 'GET'}, function (error, response) {",
+          "    if (error || !response || response.code !== 200) throw new Error('No se pudo obtener CSRF');",
+          "    const token = response.json().token;",
+          "    if (!token) throw new Error('GET /csrf no entregó token');",
+          "    pm.collectionVariables.set('csrfToken', token);",
+          "    pm.request.headers.upsert({key: 'X-CSRF-TOKEN', value: token});",
+          "    const cookie = response.headers.get('Set-Cookie');",
+          "    if (cookie) pm.request.headers.upsert({key: 'Cookie', value: cookie.split(';')[0]});",
+          "  });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "00 Preparación de datos",
+      "description": "Ejecute este folder antes de los retos dependientes. Los recursos creados usan un identificador de corrida y datos sintéticos.",
+      "item": [
+        {
+          "name": "CSRF disponible",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/csrf",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('runId', Date.now().toString(36) + Math.random().toString(36).slice(2, 7));",
+                  "['ingredientId','ingredientTc03Id','paymentMethodId','orderId','orderTc05Id','tacoId','announcementId','idempotentOrderId'].forEach(k => pm.collectionVariables.unset(k));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo token', function () { pm.expect(data).to.have.property('token'); });",
+                  "pm.test('Campo headerName', function () { pm.expect(data).to.have.property('headerName'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tokenizar tarjeta sintética",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payment-methods/tokenize",
+            "description": "Sólo se usan datos sintéticos del gateway simulado. No introduzca una tarjeta real.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"4242424242424242\",\n  \"expirationMonth\": 12,\n  \"expirationYear\": 2099,\n  \"securityCode\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo paymentMethodId', function () { pm.expect(data).to.have.property('paymentMethodId'); });",
+                  "pm.test('Campo brand', function () { pm.expect(data).to.have.property('brand'); });",
+                  "pm.test('Campo last4', function () { pm.expect(data).to.have.property('last4'); });",
+                  "pm.test('Sin PAN/CVV en respuesta', function () { pm.expect(JSON.stringify(data)).not.to.include('4242424242424242'); pm.expect(JSON.stringify(data)).not.to.include('securityCode'); });",
+                  "if ([201].includes(pm.response.code) && data) pm.collectionVariables.set(\"paymentMethodId\", String(data.paymentMethodId));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear ingrediente de prueba",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Salsa QA {{runId}}\",\n  \"type\": \"SAUCE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo name', function () { pm.expect(data).to.have.property('name'); });",
+                  "pm.test('Location apunta al recurso', function () { pm.expect(pm.response.headers.get('Location')).to.include('/api/v1/ingredients/'); });",
+                  "if ([201].includes(pm.response.code) && data) pm.collectionVariables.set(\"ingredientId\", String(data.id));",
+                  "if ([201].includes(pm.response.code) && data) pm.collectionVariables.set(\"ingredientLocation\", String(pm.response.headers.get('Location')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear taco de prueba",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Taco QA {{runId}}\",\n  \"ingredientIds\": [\n    \"FLTO\",\n    \"GRBF\",\n    \"CHED\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo name', function () { pm.expect(data).to.have.property('name'); });",
+                  "if ([201].includes(pm.response.code) && data) pm.collectionVariables.set(\"tacoId\", String(data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener taco para reemplazo PUT",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/TACO1",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo ingredients', function () { pm.expect(data).to.have.property('ingredients'); });",
+                  "if ([200].includes(pm.response.code) && data) pm.collectionVariables.set(\"tacoForPut\", String(JSON.stringify({id:data.id,name:data.name,ingredients:data.ingredients})));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear orden de prueba",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "setup-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"QA {{runId}}\",\n  \"deliveryStreet\": \"Calle Prueba 123\",\n  \"deliveryCity\": \"CDMX\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo subtotal', function () { pm.expect(data).to.have.property('subtotal'); });",
+                  "pm.test('Campo total', function () { pm.expect(data).to.have.property('total'); });",
+                  "pm.test('Campo items', function () { pm.expect(data).to.have.property('items'); });",
+                  "pm.test('Total calculado', function () { pm.expect(Number(data.total)).to.be.above(0); });",
+                  "if ([201].includes(pm.response.code) && data) pm.collectionVariables.set(\"orderId\", String(data.id));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-01 Actualizar un ingrediente",
+      "description": "Casos HTTP de docs/TC-01.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "PUT válido devuelve 200",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/{{ingredientId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Salsa QA actualizada {{runId}}\",\n  \"type\": \"SAUCE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo name', function () { pm.expect(data).to.have.property('name'); });",
+                  "pm.test('ID estable', function () { pm.expect(data.id).to.eql(pm.collectionVariables.get('ingredientId')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET confirma persistencia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/{{ingredientId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Nombre persistido', function () { pm.expect(data.name).to.eql('Salsa QA actualizada ' + pm.collectionVariables.get('runId')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT ID inexistente no crea",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/NO_EXISTE_TC_{{runId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ghost Pepper\",\n  \"type\": \"SAUCE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.expect([404]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código RESOURCE_NOT_FOUND', function () { pm.expect(data.code).to.eql('RESOURCE_NOT_FOUND'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT rechaza ID en body",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/{{ingredientId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"COTO\",\n  \"name\": \"Modified Tortilla\",\n  \"type\": \"WRAP\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código MALFORMED_REQUEST', function () { pm.expect(data.code).to.eql('MALFORMED_REQUEST'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT valida nombre y tipo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/{{ingredientId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"type\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código VALIDATION_ERROR', function () { pm.expect(data.code).to.eql('VALIDATION_ERROR'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET tras errores conserva dato",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/{{ingredientId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Errores sin mutación', function () { pm.expect(data.name).to.eql('Salsa QA actualizada ' + pm.collectionVariables.get('runId')); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-02 Eliminar un ingrediente",
+      "description": "Casos HTTP de docs/TC-02.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "DELETE elimina una vez",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/{{ingredientId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', function () { pm.expect([204]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('204 sin cuerpo', function () { pm.expect(pm.response.text()).to.eql(''); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET confirma ausencia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/{{ingredientId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.expect([404]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código RESOURCE_NOT_FOUND', function () { pm.expect(data.code).to.eql('RESOURCE_NOT_FOUND'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Segundo DELETE devuelve 404",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/{{ingredientId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.expect([404]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código RESOURCE_NOT_FOUND', function () { pm.expect(data.code).to.eql('RESOURCE_NOT_FOUND'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-03 Location de creación",
+      "description": "Casos HTTP de docs/TC-03.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "POST crea con Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chipotle QA {{runId}}\",\n  \"type\": \"SAUCE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Location resoluble', function () { pm.expect(pm.response.headers.get('Location')).to.include('/api/v1/ingredients/' + data.id); });",
+                  "if ([201].includes(pm.response.code) && data) pm.collectionVariables.set(\"ingredientTc03Id\", String(data.id));",
+                  "if ([201].includes(pm.response.code) && data) pm.collectionVariables.set(\"ingredientTc03Location\", String(pm.response.headers.get('Location')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET sigue Location",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{ingredientTc03Location}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Recurso creado', function () { pm.expect(data.id).to.eql(pm.collectionVariables.get('ingredientTc03Id')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST no guarda body inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"type\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código VALIDATION_ERROR', function () { pm.expect(data.code).to.eql('VALIDATION_ERROR'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-04 PATCH de órdenes",
+      "description": "Casos HTTP de docs/TC-04.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "PATCH sólo cambia entrega",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryState\": \"Jalisco\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Estado de entrega actualizado', function () { pm.expect(data.deliveryState).to.eql('Jalisco'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET confirma cambio de entrega",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/orders/{{orderId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Cambio persistido', function () { pm.expect(data.deliveryState).to.eql('Jalisco'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH rechaza campo sensible",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryZip\": \"54321\",\n  \"ccNumber\": \"NO-ACEPTAR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código MALFORMED_REQUEST', function () { pm.expect(data.code).to.eql('MALFORMED_REQUEST'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH rechaza ZIP inválido",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryZip\": \"12A45\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código VALIDATION_ERROR', function () { pm.expect(data.code).to.eql('VALIDATION_ERROR'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH ID ausente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/NO_EXISTE_TC_{{runId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryZip\": \"54321\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.expect([404]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código RESOURCE_NOT_FOUND', function () { pm.expect(data.code).to.eql('RESOURCE_NOT_FOUND'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH sin autenticación",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+            "description": "La cadena de seguridad puede rechazar por autenticación o CSRF; el estado no debe cambiar.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryState\": \"Nayarit\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401, 403', function () { pm.expect([401, 403]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-05 PUT y DELETE de órdenes",
+      "description": "Casos HTTP de docs/TC-05.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Crear orden exclusiva para PUT y DELETE",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc05-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"QA {{runId}}\",\n  \"deliveryStreet\": \"Calle Prueba 123\",\n  \"deliveryCity\": \"CDMX\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "if ([201].includes(pm.response.code) && data) pm.collectionVariables.set(\"orderTc05Id\", String(data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT conserva identidad",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderTc05Id}}",
+            "description": "Usa la representación del TACO1 obtenida en 00 Preparación para reemplazar sólo la orden de prueba.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"deliveryName\":\"QA reemplazo\",\"deliveryStreet\":\"Calle 2\",\"deliveryCity\":\"CDMX\",\"deliveryState\":\"CDMX\",\"deliveryZip\":\"01234\",\"tacos\":[{{tacoForPut}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('ID no cambia', function () { pm.expect(data.id).to.eql(pm.collectionVariables.get('orderTc05Id')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT rechaza cuerpo inconsistente",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderTc05Id}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"OTRA-ORDEN\",\n  \"deliveryName\": \"QA\",\n  \"deliveryStreet\": \"Calle 2\",\n  \"deliveryCity\": \"CDMX\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"tacos\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE elimina orden",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderTc05Id}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', function () { pm.expect([204]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET privado confirma ausencia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/orders/{{orderTc05Id}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.expect([404]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código RESOURCE_NOT_FOUND', function () { pm.expect(data.code).to.eql('RESOURCE_NOT_FOUND'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Segundo DELETE sigue ausente",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderTc05Id}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.expect([404]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código RESOURCE_NOT_FOUND', function () { pm.expect(data.code).to.eql('RESOURCE_NOT_FOUND'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-06 Órdenes de correo",
+      "description": "Casos HTTP de docs/TC-06.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Correo válido crea orden",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/fromEmail",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa@example.com\",\n  \"tacos\": [\n    {\n      \"name\": \"Taco Correo QA\",\n      \"ingredients\": [\n        \"FLTO\",\n        \"GRBF\",\n        \"CHED\"\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo items', function () { pm.expect(data).to.have.property('items'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Correo inválido no crea",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/fromEmail",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"no-es-email\",\n  \"tacos\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código VALIDATION_ERROR', function () { pm.expect(data.code).to.eql('VALIDATION_ERROR'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-07 Guardar y publicar una sola vez",
+      "description": "Casos HTTP de docs/TC-07.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Correo responde después del guardado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/fromEmail",
+            "description": "Postman confirma el contrato HTTP. La publicación única se verifica en EmailOrderSubmissionServiceTest y pruebas de mensajería.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa@example.com\",\n  \"tacos\": [\n    {\n      \"name\": \"Taco Correo QA\",\n      \"ingredients\": [\n        \"FLTO\",\n        \"GRBF\",\n        \"CHED\"\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo items', function () { pm.expect(data).to.have.property('items'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazo no publica orden",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/fromEmail",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa@example.com\",\n  \"tacos\": [\n    {\n      \"name\": \"\",\n      \"ingredients\": []\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-08 DTOs públicos",
+      "description": "Casos HTTP de docs/TC-08.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "DTO de ingrediente omite persistencia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/FLTO",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo name', function () { pm.expect(data).to.have.property('name'); });",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('No expone stock interno', function () { pm.expect(data).not.to.have.property('stockOnHand'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DTO de orden omite PAN y hash",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/orders/{{orderId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Sin datos sensibles', function () { const body = JSON.stringify(data).toLowerCase(); ['ccnumber','cccvv','password','pan'].forEach(k => pm.expect(body).not.to.include(k)); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-09 Validación y Problem Details",
+      "description": "Casos HTTP de docs/TC-09.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "404 usa Problem Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/NO_EXISTE_TC_{{runId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.expect([404]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código RESOURCE_NOT_FOUND', function () { pm.expect(data.code).to.eql('RESOURCE_NOT_FOUND'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 lista violaciones",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/FLTO",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"type\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código VALIDATION_ERROR', function () { pm.expect(data.code).to.eql('VALIDATION_ERROR'); });",
+                  "pm.test('Violaciones presentes', function () { pm.expect(data.violations).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-10 Registro reactivo",
+      "description": "Casos HTTP de docs/TC-10.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Registro persiste usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/register",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"qa_{{runId}}\",\n  \"password\": \"TacoTest123!\",\n  \"confirm\": \"TacoTest123!\",\n  \"fullname\": \"QA User\",\n  \"street\": \"Calle 1\",\n  \"city\": \"CDMX\",\n  \"state\": \"CDMX\",\n  \"zip\": \"01234\",\n  \"phone\": \"5551234567\",\n  \"email\": \"qa_{{runId}}@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201, 303', function () { pm.expect([201, 303]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('No retorna password', function () { pm.expect(pm.response.text().toLowerCase()).not.to.include('tacotest123'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Username duplicado da 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/register",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"qa_{{runId}}\",\n  \"password\": \"TacoTest123!\",\n  \"confirm\": \"TacoTest123!\",\n  \"fullname\": \"QA User\",\n  \"street\": \"Calle 1\",\n  \"city\": \"CDMX\",\n  \"state\": \"CDMX\",\n  \"zip\": \"01234\",\n  \"phone\": \"5551234567\",\n  \"email\": \"qa_{{runId}}@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', function () { pm.expect([409]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-11 Autorización por roles",
+      "description": "Casos HTTP de docs/TC-11.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Ruta privada sin auth",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/orders",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', function () { pm.expect([401]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ruta ADMIN con habuma",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/orders?page=0&size=1",
+            "description": "DevelopmentConfig asigna USER y ADMIN a habuma."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo content', function () { pm.expect(data).to.have.property('content'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ruta KITCHEN denegada a habuma",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/kitchen/queue",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', function () { pm.expect([403]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código ACCESS_DENIED', function () { pm.expect(data.code).to.eql('ACCESS_DENIED'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-12 Pago tokenizado",
+      "description": "Casos HTTP de docs/TC-12.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Tokenizar sin retornar PAN/CVV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payment-methods/tokenize",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"4242424242424242\",\n  \"expirationMonth\": 12,\n  \"expirationYear\": 2099,\n  \"securityCode\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo paymentMethodId', function () { pm.expect(data).to.have.property('paymentMethodId'); });",
+                  "pm.test('Campo last4', function () { pm.expect(data).to.have.property('last4'); });",
+                  "pm.test('Sólo datos enmascarados', function () { const raw = JSON.stringify(data); pm.expect(raw).not.to.include('4242424242424242'); pm.expect(raw).not.to.include('securityCode'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tarjeta sintética inválida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payment-methods/tokenize",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pan\": \"123\",\n  \"expirationMonth\": 13,\n  \"expirationYear\": 2099,\n  \"securityCode\": \"1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-13 Catálogo y stock",
+      "description": "Casos HTTP de docs/TC-13.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "GET catálogo muestra precio",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/FLTO",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo unitPrice', function () { pm.expect(data).to.have.property('unitPrice'); });",
+                  "pm.test('Campo available', function () { pm.expect(data).to.have.property('available'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN ajusta catálogo de fixture",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/ingredients/{{ingredientTc03Id}}/catalog",
+            "description": "Use sólo el ingrediente TC-03. Una nueva corrida usa otro ID; versión inicial esperada: 0.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unitPrice\": 1.25,\n  \"version\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo unitPrice', function () { pm.expect(data).to.have.property('unitPrice'); });",
+                  "pm.test('Campo version', function () { pm.expect(data).to.have.property('version'); });",
+                  "if ([200].includes(pm.response.code) && data) pm.collectionVariables.set(\"ingredientVersion\", String(data.version));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN rechaza versión obsoleta",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/ingredients/{{ingredientTc03Id}}/catalog",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unitPrice\": 1.3,\n  \"version\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', function () { pm.expect([409]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN ajusta stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/ingredients/{{ingredientTc03Id}}/stock-adjustments",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"quantity\":10,\"version\":{{ingredientVersion}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Stock ajustado', function () { pm.expect(data.stockOnHand).to.eql(10); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-14 Precios del servidor",
+      "description": "Casos HTTP de docs/TC-14.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Orden calcula total del lado servidor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc14-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"QA {{runId}}\",\n  \"deliveryStreet\": \"Calle Prueba 123\",\n  \"deliveryCity\": \"CDMX\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 1\n    }\n  ],\n  \"total\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo subtotal', function () { pm.expect(data).to.have.property('subtotal'); });",
+                  "pm.test('Campo total', function () { pm.expect(data).to.have.property('total'); });",
+                  "pm.test('Total no acepta cero del cliente', function () { pm.expect(Number(data.total)).to.be.above(0); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cantidad cero es inválida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc14-bad-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"QA {{runId}}\",\n  \"deliveryStreet\": \"Calle Prueba 123\",\n  \"deliveryCity\": \"CDMX\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 0\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-15 Cupones",
+      "description": "Casos HTTP de docs/TC-15.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo. En la aplicación local observada, WELCOME10 respondió 422 el 29-09-2026; el caso positivo espera 200 y permite detectar la configuración de cupón pendiente.",
+      "item": [
+        {
+          "name": "WELCOME10 descuenta 10 por ciento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/quote",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subtotal\": 150,\n  \"couponCode\": \"WELCOME10\",\n  \"items\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo subtotal', function () { pm.expect(data).to.have.property('subtotal'); });",
+                  "pm.test('Campo discount', function () { pm.expect(data).to.have.property('discount'); });",
+                  "pm.test('Campo total', function () { pm.expect(data).to.have.property('total'); });",
+                  "pm.test('Descuento esperado', function () { pm.expect(Number(data.discount)).to.eql(15); pm.expect(Number(data.total)).to.eql(135); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cupón inválido se rechaza",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/quote",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subtotal\": 150,\n  \"couponCode\": \"NO_EXISTE\",\n  \"items\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', function () { pm.expect([422]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-16 Reserva de inventario",
+      "description": "Casos HTTP de docs/TC-16.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Orden reserva inventario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc16-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "description": "La prueba atómica concurrente y compensación parcial se ejecutan en InventoryServiceMongoTest.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"QA {{runId}}\",\n  \"deliveryStreet\": \"Calle Prueba 123\",\n  \"deliveryCity\": \"CDMX\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo items', function () { pm.expect(data).to.have.property('items'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Solicitud inválida no reserva",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc16-bad-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"QA {{runId}}\",\n  \"deliveryStreet\": \"Calle Prueba 123\",\n  \"deliveryCity\": \"CDMX\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stock insuficiente no crea orden",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc16-stock-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "description": "Seis líneas de 20 unidades exceden el stock inicial de 100. Use una base de pruebas; la reserva parcial debe compensarse.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"QA {{runId}}\",\n  \"deliveryStreet\": \"Calle Prueba 123\",\n  \"deliveryCity\": \"CDMX\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 20\n    },\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 20\n    },\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 20\n    },\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 20\n    },\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 20\n    },\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 20\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409, 422', function () { pm.expect([409, 422]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código INSUFFICIENT_STOCK', function () { pm.expect(data.code).to.eql('INSUFFICIENT_STOCK'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-17 Clasificación dietaria",
+      "description": "Casos HTTP de docs/TC-17.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Clasificación de taco",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/TACO3/classification",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo dietaryTags', function () { pm.expect(data).to.have.property('dietaryTags'); });",
+                  "pm.test('Campo allergens', function () { pm.expect(data).to.have.property('allergens'); });",
+                  "pm.test('Campo spiceLevel', function () { pm.expect(data).to.have.property('spiceLevel'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Taco ausente no se clasifica",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/NO_EXISTE_TC_{{runId}}/classification",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.expect([404]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código RESOURCE_NOT_FOUND', function () { pm.expect(data.code).to.eql('RESOURCE_NOT_FOUND'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-18 Taco Physics",
+      "description": "Casos HTTP de docs/TC-18.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Diseño válido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/validate",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Taco QA {{runId}}\",\n  \"ingredientIds\": [\n    \"FLTO\",\n    \"GRBF\",\n    \"CHED\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo valid', function () { pm.expect(data).to.have.property('valid'); });",
+                  "pm.test('Campo violations', function () { pm.expect(data).to.have.property('violations'); });",
+                  "pm.test('Sin violaciones', function () { pm.expect(data.valid).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Diseño sin base se rechaza",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/validate",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Taco sin base\",\n  \"ingredientIds\": [\n    \"GRBF\",\n    \"CHED\",\n    \"TMTO\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo valid', function () { pm.expect(data).to.have.property('valid'); });",
+                  "pm.test('Campo violations', function () { pm.expect(data).to.have.property('violations'); });",
+                  "pm.test('Regla de base detectada', function () { pm.expect(data.valid).to.eql(false); pm.expect(data.violations.length).to.be.above(0); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-19 Búsqueda y paginación",
+      "description": "Casos HTTP de docs/TC-19.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Buscar y paginar",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos?ingredientId=FLTO&page=0&size=1&sort=createdAt,desc",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo content', function () { pm.expect(data).to.have.property('content'); });",
+                  "pm.test('Campo page', function () { pm.expect(data).to.have.property('page'); });",
+                  "pm.test('Campo size', function () { pm.expect(data).to.have.property('size'); });",
+                  "pm.test('Campo totalElements', function () { pm.expect(data).to.have.property('totalElements'); });",
+                  "pm.test('Página solicitada', function () { pm.expect(data.page).to.eql(0); pm.expect(data.size).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Página inválida",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos?page=-1&size=999",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-20 Taco del día",
+      "description": "Casos HTTP de docs/TC-20.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Taco del día",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/today",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo taco', function () { pm.expect(data).to.have.property('taco'); });",
+                  "pm.test('Campo date', function () { pm.expect(data).to.have.property('date'); });",
+                  "pm.test('Campo reason', function () { pm.expect(data).to.have.property('reason'); });",
+                  "if ([200].includes(pm.response.code) && data) pm.collectionVariables.set(\"todayTacoId\", String(data.taco.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Repetición mantiene selección",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/today",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Mismo taco durante la corrida', function () { pm.expect(data.taco.id).to.eql(pm.collectionVariables.get('todayTacoId')); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-21 Favoritos privados",
+      "description": "Casos HTTP de docs/TC-21.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Añadir favorito propio",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/favorites/{{tacoId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200, 201, 204', function () { pm.expect([200, 201, 204]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Sin userId ajeno en URL', function () { pm.expect(pm.request.url.toString()).to.include('/users/me/'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "userId de query no cambia el dueño",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/favorites/{{tacoId}}?userId=otro",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Taco de sesión', function () { pm.expect(data.id).to.eql(pm.collectionVariables.get('tacoId')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar favoritos privados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/favorites?page=0&size=20",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo content', function () { pm.expect(data).to.have.property('content'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar favorito",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/favorites/{{tacoId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200, 204', function () { pm.expect([200, 204]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sin credenciales no hay favoritos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/favorites",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', function () { pm.expect([401]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-22 Calificaciones",
+      "description": "Casos HTTP de docs/TC-22.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Calificar taco",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/{{tacoId}}/rating",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo average', function () { pm.expect(data).to.have.property('average'); });",
+                  "pm.test('Campo count', function () { pm.expect(data).to.have.property('count'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar calificación",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/{{tacoId}}/rating",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo average', function () { pm.expect(data).to.have.property('average'); });",
+                  "pm.test('Campo count', function () { pm.expect(data).to.have.property('count'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar voto no duplica calificación",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/{{tacoId}}/rating",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Un voto para el usuario', function () { pm.expect(data.count).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ranking ordenado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/top?limit=3",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Lista de ranking', function () { pm.expect(data).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Calificación fuera de rango",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/{{tacoId}}/rating",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 6\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código VALIDATION_ERROR', function () { pm.expect(data.code).to.eql('VALIDATION_ERROR'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-23 Historial privado",
+      "description": "Casos HTTP de docs/TC-23.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Historial paginado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/orders?page=0&size=2",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo content', function () { pm.expect(data).to.have.property('content'); });",
+                  "pm.test('Campo page', function () { pm.expect(data).to.have.property('page'); });",
+                  "pm.test('Campo size', function () { pm.expect(data).to.have.property('size'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle de orden propia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/orders/{{orderId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Orden propia', function () { pm.expect(data.id).to.eql(pm.collectionVariables.get('orderId')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orden inexistente no filtra datos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/orders/NO_EXISTE_TC_{{runId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.expect([404]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Otro usuario no ve la orden",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/orders/{{orderId}}",
+            "description": "Requiere ejecutar TC-10 antes de TC-23.",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "qa_{{runId}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "TacoTest123!",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.expect([404]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-24 Reordenar",
+      "description": "Casos HTTP de docs/TC-24.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Recompra usa precios vigentes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc24-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/reorder",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"confirmPriceChange\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200, 201', function () { pm.expect([200, 201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo sourceOrderId', function () { pm.expect(data).to.have.property('sourceOrderId'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orden de origen ausente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc24-missing-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/NO_EXISTE_TC_{{runId}}/reorder",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"confirmPriceChange\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.expect([404]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-25 Estados de orden",
+      "description": "Casos HTTP de docs/TC-25.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Cancelar orden propia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/cancel",
+            "description": "Cancela sólo la orden fixture. Ejecute este folder después de los retos que usan {{orderId}} activo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Prueba TC-25\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Estado CANCELLED', function () { pm.expect(data.status).to.eql('CANCELLED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Segunda cancelación no repite efecto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/cancel",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Reintento TC-25\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Sigue CANCELLED', function () { pm.expect(data.status).to.eql('CANCELLED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Transición ilegal se rechaza",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/status",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DELIVERED\",\n  \"reason\": \"Prueba inválida\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403, 409', function () { pm.expect([403, 409]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-26 Cola de cocina",
+      "description": "Casos HTTP de docs/TC-26.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "USER/ADMIN no accede a cocina",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/kitchen/queue",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', function () { pm.expect([403]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código ACCESS_DENIED', function () { pm.expect(data.code).to.eql('ACCESS_DENIED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "KITCHEN consulta cola",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/kitchen/queue",
+            "description": "Se omite automáticamente hasta configurar kitchenUsername y kitchenPassword.",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{kitchenUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{kitchenPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('kitchenUsername') || !pm.collectionVariables.get('kitchenPassword')) pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Cola sin pago ni dirección', function () { const raw = pm.response.text().toLowerCase(); pm.expect(raw).not.to.include('paymentmethod'); pm.expect(raw).not.to.include('deliverystreet'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "KITCHEN reclama siguiente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/kitchen/orders/claim",
+            "description": "Claim cambia estado; ejecute sólo en una base de pruebas con cola preparada.",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{kitchenUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{kitchenPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('kitchenUsername') || !pm.collectionVariables.get('kitchenPassword')) pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200, 204', function () { pm.expect([200, 204]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-27 Contrato de eventos",
+      "description": "Casos HTTP de docs/TC-27.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Crear orden con respuesta sin secretos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc27-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "description": "El contenido del evento ORDER_CREATED se verifica con OrderEventContractTest, no desde HTTP.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"QA {{runId}}\",\n  \"deliveryStreet\": \"Calle Prueba 123\",\n  \"deliveryCity\": \"CDMX\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('No hay datos de tarjeta', function () { const raw = pm.response.text().toLowerCase(); ['securitycode','pan','ccnumber'].forEach(k => pm.expect(raw).not.to.include(k)); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle conserva estado público",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/orders/{{orderId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo items', function () { pm.expect(data).to.have.property('items'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-28 Selección de broker",
+      "description": "Casos HTTP de docs/TC-28.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "API responde con transporte configurado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/FLTO",
+            "description": "Para comparar noop/jms/rabbit/kafka reinicie la aplicación con tacocloud.messaging.transport; Postman no cambia el broker en runtime."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Salud tras selección de transporte",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/health",
+            "description": "La selección exclusiva del adaptador se prueba en los módulos de mensajería."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200, 503', function () { pm.expect([200, 503]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-29 Outbox",
+      "description": "Casos HTTP de docs/TC-29.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Orden responde tras commit local",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc29-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "description": "El outbox y reintentos se verifican con OrderOutboxMongoTest y OutboxPublisherTest.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"QA {{runId}}\",\n  \"deliveryStreet\": \"Calle Prueba 123\",\n  \"deliveryCity\": \"CDMX\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orden sigue disponible",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/orders/{{orderId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-30 Consumidor idempotente",
+      "description": "Casos HTTP de docs/TC-30.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Cocina protegida ante consumidor",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/kitchen/queue",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', function () { pm.expect([403]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código ACCESS_DENIED', function () { pm.expect(data.code).to.eql('ACCESS_DENIED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Salud del consumidor",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/health",
+            "description": "Duplicados, retry limitado y DLQ se prueban en KitchenEventProcessorTest y pruebas del broker; HTTP no inyecta eventos."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200, 503', function () { pm.expect([200, 503]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-31 Correlation ID",
+      "description": "Casos HTTP de docs/TC-31.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Correlation ID se devuelve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{correlationId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/FLTO",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Echo de correlation ID', function () { pm.expect(pm.response.headers.get('X-Correlation-Id')).to.eql(pm.collectionVariables.get('correlationId')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Correlation ID inválido se normaliza",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-Id",
+                "value": "valor con espacios"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/FLTO",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('ID válido en respuesta', function () { pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9._-]+$/); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-32 Métricas y salud",
+      "description": "Casos HTTP de docs/TC-32.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Health expone estado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/health",
+            "description": "503 es válido si una dependencia local está caída; inspeccione componentes antes de interpretar disponibilidad."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200, 503', function () { pm.expect([200, 503]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN consulta métricas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/metrics",
+            "description": "habuma tiene ADMIN en el perfil de desarrollo."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo names', function () { pm.expect(data).to.have.property('names'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Contador de órdenes de negocio",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/metrics/tacocloud.orders",
+            "description": "Requiere haber creado al menos una orden en 00 Preparación."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo name', function () { pm.expect(data).to.have.property('name'); });",
+                  "pm.test('Campo measurements', function () { pm.expect(data).to.have.property('measurements'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Métricas sin auth protegidas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/metrics",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', function () { pm.expect([401]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-33 Anuncios operativos",
+      "description": "Casos HTTP de docs/TC-33.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Crear anuncio operativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/announcements",
+            "description": "La colección calcula expiresAt a 24 horas, dentro del TTL máximo de 30 días.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Aviso QA {{runId}}\",\n  \"severity\": \"INFO\",\n  \"expiresAt\": \"{{announcementExpiresAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo text', function () { pm.expect(data).to.have.property('text'); });",
+                  "if ([201].includes(pm.response.code) && data) pm.collectionVariables.set(\"announcementId\", String(data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anuncio público visible",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/announcements",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Lista de anuncios', function () { pm.expect(data).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anuncio inválido rechazado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/announcements",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"\",\n  \"severity\": \"INFO\",\n  \"expiresAt\": \"2000-01-01T00:00:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.expect([400]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Retirar anuncio",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/announcements/{{announcementId}}",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', function () { pm.expect([204]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-34 Idempotency-Key",
+      "description": "Casos HTTP de docs/TC-34.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Primera petición con Idempotency-Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc34-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"QA {{runId}}\",\n  \"deliveryStreet\": \"Calle Prueba 123\",\n  \"deliveryCity\": \"CDMX\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.expect([201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "if ([201].includes(pm.response.code) && data) pm.collectionVariables.set(\"idempotentOrderId\", String(data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Replay no duplica orden",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc34-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"QA {{runId}}\",\n  \"deliveryStreet\": \"Calle Prueba 123\",\n  \"deliveryCity\": \"CDMX\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200, 201', function () { pm.expect([200, 201]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Mismo orderId', function () { pm.expect(data.id).to.eql(pm.collectionVariables.get('idempotentOrderId')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Misma key con body distinto da 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "tc34-{{runId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"QA {{runId}}\",\n  \"deliveryStreet\": \"Calle Prueba 123\",\n  \"deliveryCity\": \"Puebla\",\n  \"deliveryState\": \"CDMX\",\n  \"deliveryZip\": \"01234\",\n  \"paymentMethodId\": \"{{paymentMethodId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco QA\",\n        \"ingredientIds\": [\n          \"FLTO\",\n          \"GRBF\",\n          \"CHED\"\n        ]\n      },\n      \"quantity\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', function () { pm.expect([409]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-35 API v1 y OpenAPI",
+      "description": "Casos HTTP de docs/TC-35.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Especificación OpenAPI disponible",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/openapi.yaml",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('OpenAPI 3 y rutas v1', function () { pm.expect(pm.response.text()).to.include('openapi: 3.0.3'); pm.expect(pm.response.text()).to.include('/ingredients:'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ruta v1 funciona",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/FLTO",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo name', function () { pm.expect(data).to.have.property('name'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alias legado declara deprecación",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/ingredients/FLTO",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Headers de transición', function () { pm.expect(pm.response.headers.get('Deprecation')).to.eql('true'); pm.expect(pm.response.headers.get('Link')).to.include('/api/v1/ingredients/FLTO'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-36 Suite de regresión",
+      "description": "Casos HTTP de docs/TC-36.md. Las verificaciones internas indicadas en la ficha requieren también las pruebas Java del módulo.",
+      "item": [
+        {
+          "name": "Smoke de catálogo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/FLTO",
+            "description": ""
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.expect([200]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo id', function () { pm.expect(data).to.have.property('id'); });",
+                  "pm.test('Campo name', function () { pm.expect(data).to.have.property('name'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Smoke de seguridad",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/orders",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', function () { pm.expect([401]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Smoke de error uniforme",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/NO_EXISTE_TC_{{runId}}",
+            "description": "La suite Java completa se ejecuta con .\\mvnw.cmd test desde tacocloud; Postman cubre sólo el borde HTTP."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.expect([404]).to.include(pm.response.code); });",
+                  "let data = null; try { data = pm.response.json(); } catch (e) {}",
+                  "pm.test('Campo type', function () { pm.expect(data).to.have.property('type'); });",
+                  "pm.test('Campo title', function () { pm.expect(data).to.have.property('title'); });",
+                  "pm.test('Campo status', function () { pm.expect(data).to.have.property('status'); });",
+                  "pm.test('Campo code', function () { pm.expect(data).to.have.property('code'); });",
+                  "pm.test('Problem Details coincide con HTTP', function () { pm.expect(data.status).to.eql(pm.response.code); });",
+                  "pm.test('Código RESOURCE_NOT_FOUND', function () { pm.expect(data.code).to.eql('RESOURCE_NOT_FOUND'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

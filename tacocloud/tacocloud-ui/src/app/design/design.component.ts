@@ -29,7 +29,7 @@ export class DesignComponent implements OnInit {
 
   // tag::ngOnInit[]
   ngOnInit() {
-    this.httpClient.get('http://localhost:8080/api/ingredients')
+    this.httpClient.get('http://localhost:8080/api/v1/ingredients')
         .subscribe(data => {
           this.allIngredients = (<any[]>data).filter(ingredient => ingredient.available);
           this.wraps = this.allIngredients.filter(w => w.type === 'WRAP');
@@ -52,7 +52,7 @@ export class DesignComponent implements OnInit {
   // tag::onSubmit[]
   onSubmit() {
     this.httpClient.post(
-        'http://localhost:8080/api/tacos',
+        'http://localhost:8080/api/v1/tacos',
         this.model, {
             headers: new HttpHeaders().set('Content-type', 'application/json'),
         }).subscribe(taco => this.cart.addToCart(taco));

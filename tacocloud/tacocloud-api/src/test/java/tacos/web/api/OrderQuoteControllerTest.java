@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
 
 import tacos.pricing.CouponProperties;
 import tacos.pricing.CouponRule;
@@ -54,7 +55,7 @@ public class OrderQuoteControllerTest {
     TacoDesignValidator validator = new TacoDesignValidator(java.util.List.of(new BaseCountRule(),
         new IngredientCountRule(2, 12), new UniqueIngredientsRule(), new AvailableIngredientsRule(),
         new ExtremeSpiceRequiresBeverageRule(true), new SauceLimitRule(3)));
-    client = WebTestClient.bindToController(new OrderQuoteController(coupons,
+    client = MockMvcWebTestClient.bindToController(new OrderQuoteController(coupons,
         new OrderPricingService(20, "MXN"), new TacoClassificationService(),
         new TacoDesignService(ingredientRepo, validator)))
         .controllerAdvice(new GlobalApiExceptionHandler()).build();

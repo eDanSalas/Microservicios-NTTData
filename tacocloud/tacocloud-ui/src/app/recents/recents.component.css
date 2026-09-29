@@ -67,3 +67,25 @@ ul.commalist li:only-child:before {
 .small {
   font-size: 12pt;
 }
+
+button.favorite {
+  border: 1px solid #003366;
+  border-radius: 10px;
+  background: white;
+  color: #003366;
+  cursor: pointer;
+  font-weight: bold;
+  margin-right: 8px;
+  padding: 5px;
+}
+
+button.rating,
+select {
+  margin-right: 5px;
+  padding: 5px;
+}
+
+span.ratingResult {
+  display: block;
+  margin: 8px 0;
+}

@@ -6,9 +6,8 @@ import org.springframework.stereotype.Service;
 
 import reactor.core.publisher.Mono;
 import tacos.TacoOrder;
-import tacos.data.OrderRepository;
-import tacos.messaging.OrderMessagingService;
 import tacos.inventory.InventoryService;
+import tacos.outbox.OrderOutboxService;
 import tacos.web.api.EmailOrder;
 import tacos.web.api.EmailOrderService;
 
@@ -16,19 +15,16 @@ import tacos.web.api.EmailOrderService;
 public class EmailOrderSubmissionService {
 
   private final EmailOrderService emailOrderService;
-  private final OrderRepository orderRepo;
-  private final OrderMessagingService orderMessages;
+  private final OrderOutboxService orderOutbox;
   private final InventoryService inventoryService;
 
   public EmailOrderSubmissionService(
       EmailOrderService emailOrderService,
-      OrderRepository orderRepo,
-      OrderMessagingService orderMessages,
+      OrderOutboxService orderOutbox,
       InventoryService inventoryService) {
 
     this.emailOrderService = emailOrderService;
-    this.orderRepo = orderRepo;
-    this.orderMessages = orderMessages;
+    this.orderOutbox = orderOutbox;
     this.inventoryService = inventoryService;
   }
 
@@ -39,22 +35,8 @@ public class EmailOrderSubmissionService {
         .convertEmailOrderToDomainOrder(emailOrder)
         .flatMap(order -> {
           order.setId(UUID.randomUUID().toString());
-          return inventoryService.reserve(order, order.getId()).then(orderRepo.save(order))
-              .onErrorResume(error -> inventoryService.release(order.getId()).then(Mono.error(error)))
-              .flatMap(savedOrder -> publish(savedOrder).thenReturn(savedOrder));
+          return inventoryService.reserve(order, order.getId()).then(orderOutbox.save(order))
+              .onErrorResume(error -> inventoryService.release(order.getId()).then(Mono.error(error)));
         });
-  }
-
-  private Mono<Void> publish(
-      TacoOrder savedOrder) {
-
-    /*
-     * Adaptador temporal porque OrderMessagingService
-     * todavía devuelve void.
-     *
-     * TC-29 reemplazará esta coordinación por outbox.
-     */
-    return Mono.fromRunnable(
-        () -> orderMessages.sendOrder(savedOrder));
   }
 }

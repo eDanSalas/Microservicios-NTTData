@@ -91,7 +91,7 @@ public class OrderService {
             return Flux.error(new ResponseStatusException(HttpStatus.FORBIDDEN, "Authenticated user has no identifier"));
         }
 
-        return repo.findByUser_IdOrderByPlacedAtDesc(userId);
+        return repo.findByUserIdOrderByPlacedAtDesc(userId);
     }
 
     private Mono<TacoOrder> findAuthorizedOrder(
@@ -123,9 +123,8 @@ public class OrderService {
                 ? authenticatedUser.getId()
                 : null;
 
-        String ownerId = order.getUser() != null
-                ? order.getUser().getId()
-                : null;
+        String ownerId = order.getUserId() != null ? order.getUserId()
+                : order.getUser() != null ? order.getUser().getId() : null;
 
         boolean isOwner = authenticatedId != null
                 && authenticatedId.equals(ownerId);
@@ -135,6 +134,7 @@ public class OrderService {
 
     private boolean isMutable(TacoOrder order) {
         return order.getStatus() == null
+            || order.getStatus() == OrderStatus.CREATED
             || order.getStatus() == OrderStatus.PLACED;
     }
 

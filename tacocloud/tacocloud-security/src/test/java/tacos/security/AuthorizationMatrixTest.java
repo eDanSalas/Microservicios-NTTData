@@ -8,7 +8,11 @@ import static org.springframework.test.web.servlet
 import static org.springframework.test.web.servlet
     .request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet
+    .request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet
     .request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet
+    .request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet
     .result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -65,12 +69,30 @@ public class AuthorizationMatrixTest {
 
   @Test
   @WithMockUser(roles = "USER")
-  public void userCanReadOrders()
+  public void userCannotReadGlobalOrders()
       throws Exception {
 
     mockMvc.perform(
             get("/api/orders"))
-        .andExpect(status().isOk());
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(roles = "USER")
+  public void userCanReadOwnOrders() throws Exception {
+    mockMvc.perform(get("/api/users/me/orders")).andExpect(status().isOk());
+  }
+
+  @Test
+  @WithMockUser(roles = "USER")
+  public void userCannotReadAdminOrders() throws Exception {
+    mockMvc.perform(get("/api/admin/orders")).andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(roles = "ADMIN")
+  public void adminCanReadAdminOrders() throws Exception {
+    mockMvc.perform(get("/api/admin/orders")).andExpect(status().isOk());
   }
 
   @Test
@@ -93,6 +115,33 @@ public class AuthorizationMatrixTest {
             post("/api/ingredients")
                 .with(csrf()))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  public void anonymousCannotReadFavorites() throws Exception {
+    mockMvc.perform(get("/api/users/me/favorites")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @WithMockUser(roles = "USER")
+  public void userCanReadFavorites() throws Exception {
+    mockMvc.perform(get("/api/users/me/favorites")).andExpect(status().isOk());
+  }
+
+  @Test
+  public void anonymousCannotRateTaco() throws Exception {
+    mockMvc.perform(put("/api/tacos/1/rating").with(csrf())).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @WithMockUser(roles = "USER")
+  public void userCanRateTaco() throws Exception {
+    mockMvc.perform(put("/api/tacos/1/rating").with(csrf())).andExpect(status().isOk());
+  }
+
+  @Test
+  public void anonymousCanReadTopTacos() throws Exception {
+    mockMvc.perform(get("/api/tacos/top")).andExpect(status().isOk());
   }
 
   @Test
@@ -130,6 +179,46 @@ public class AuthorizationMatrixTest {
 
     mockMvc.perform(
             get("/api/kitchen/queue"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @WithMockUser(roles = "ADMIN")
+  public void adminCannotAccessKitchenQueue() throws Exception {
+    mockMvc.perform(get("/api/kitchen/queue")).andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(roles = "KITCHEN")
+  public void kitchenCanClaimOrder() throws Exception {
+    mockMvc.perform(post("/api/kitchen/orders/claim").with(csrf()))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @WithMockUser(roles = "USER")
+  public void userCannotChangeOrderStatus() throws Exception {
+    mockMvc.perform(patch("/api/orders/1/status").with(csrf()))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(roles = "KITCHEN")
+  public void kitchenCanChangeOrderStatus() throws Exception {
+    mockMvc.perform(patch("/api/orders/1/status").with(csrf()))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  public void anonymousCannotCancelOrder() throws Exception {
+    mockMvc.perform(post("/api/orders/1/cancel").with(csrf()))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @WithMockUser(roles = "USER")
+  public void userCanCancelOrder() throws Exception {
+    mockMvc.perform(post("/api/orders/1/cancel").with(csrf()))
         .andExpect(status().isOk());
   }
 
@@ -174,6 +263,51 @@ public class AuthorizationMatrixTest {
 
   @Test
   @WithMockUser(roles = "USER")
+  public void userCannotAccessActuatorMetrics() throws Exception {
+    mockMvc.perform(get("/actuator/metrics")).andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(roles = "ADMIN")
+  public void adminCanAccessActuatorMetrics() throws Exception {
+    mockMvc.perform(get("/actuator/metrics")).andExpect(status().isOk());
+  }
+
+  @Test
+  public void announcementsArePubliclyReadable() throws Exception {
+    mockMvc.perform(get("/api/announcements")).andExpect(status().isOk());
+  }
+
+  @Test
+  @WithMockUser(roles = "USER")
+  public void userCannotCreateAnnouncement() throws Exception {
+    mockMvc.perform(post("/api/admin/announcements").with(csrf()))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(roles = "ADMIN")
+  public void adminCanCreateAnnouncement() throws Exception {
+    mockMvc.perform(post("/api/admin/announcements").with(csrf()))
+        .andExpect(status().isCreated());
+  }
+
+  @Test
+  @WithMockUser(roles = "USER")
+  public void userCannotDeleteAnnouncement() throws Exception {
+    mockMvc.perform(delete("/api/admin/announcements/id-1").with(csrf()))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(roles = "ADMIN")
+  public void adminCanDeleteAnnouncement() throws Exception {
+    mockMvc.perform(delete("/api/admin/announcements/id-1").with(csrf()))
+        .andExpect(status().isNoContent());
+  }
+
+  @Test
+  @WithMockUser(roles = "USER")
   public void userCannotAccessDataRest()
       throws Exception {
 
@@ -210,6 +344,19 @@ public class AuthorizationMatrixTest {
       mockMvc.perform(
               post("/api/payment-methods/tokenize")
                   .with(csrf()))
+          .andExpect(status().isOk());
+    }
+
+    @Test
+    public void anonymousCannotReorder() throws Exception {
+      mockMvc.perform(post("/api/orders/1/reorder").with(csrf()))
+          .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void userCanReorder() throws Exception {
+      mockMvc.perform(post("/api/orders/1/reorder").with(csrf()))
           .andExpect(status().isOk());
     }
 
@@ -252,6 +399,31 @@ public class AuthorizationMatrixTest {
       return "orders";
     }
 
+    @GetMapping("/api/users/me/orders")
+    public String ownOrders() {
+      return "orders";
+    }
+
+    @GetMapping("/api/admin/orders")
+    public String adminOrders() {
+      return "orders";
+    }
+
+    @GetMapping("/api/users/me/favorites")
+    public String favorites() {
+      return "favorites";
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/api/tacos/1/rating")
+    public String rateTaco() {
+      return "rated";
+    }
+
+    @GetMapping("/api/tacos/top")
+    public String topTacos() {
+      return "top";
+    }
+
     @PostMapping("/api/ingredients")
     public String createIngredient() {
       return "created";
@@ -265,6 +437,21 @@ public class AuthorizationMatrixTest {
     @GetMapping("/api/kitchen/queue")
     public String kitchen() {
       return "kitchen";
+    }
+
+    @PostMapping("/api/kitchen/orders/claim")
+    public String claimKitchenOrder() {
+      return "claimed";
+    }
+
+    @org.springframework.web.bind.annotation.PatchMapping("/api/orders/1/status")
+    public String changeOrderStatus() {
+      return "changed";
+    }
+
+    @PostMapping("/api/orders/1/cancel")
+    public String cancelOrder() {
+      return "cancelled";
     }
 
     @GetMapping("/api/not-listed")
@@ -282,6 +469,27 @@ public class AuthorizationMatrixTest {
       return "info";
     }
 
+    @GetMapping("/actuator/metrics")
+    public String actuatorMetrics() {
+      return "metrics";
+    }
+
+    @GetMapping("/api/announcements")
+    public String announcements() {
+      return "announcements";
+    }
+
+    @PostMapping("/api/admin/announcements")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
+    public String createAnnouncement() {
+      return "created";
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/api/admin/announcements/id-1")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
+    public void deleteAnnouncement() {
+    }
+
     @GetMapping("/data-api/ingredients")
     public String dataRest() {
       return "ingredients";
@@ -290,6 +498,11 @@ public class AuthorizationMatrixTest {
     @PostMapping("/api/payment-methods/tokenize")
     public String tokenizePayment() {
       return "tokenized";
+    }
+
+    @PostMapping("/api/orders/1/reorder")
+    public String reorder() {
+      return "reordered";
     }
 
     @GetMapping("/register")

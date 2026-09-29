@@ -1,11 +1,10 @@
-# The values given here are actually the default values. But they are explicitly
-# set here as an example of setting the Kafka properties.
 spring:
   kafka:
-    bootstrap-servers:
-    - localhost:9092
-    template:
-      default-topic: tacocloud.orders.topic
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       keySerializer: org.springframework.kafka.support.serializer.JsonSerializer
       valueSerializer: org.springframework.kafka.support.serializer.JsonSerializer
+tacocloud:
+  messaging:
+    kafka:
+      topic: ${KAFKA_ORDER_TOPIC:tacocloud.orders.topic}
