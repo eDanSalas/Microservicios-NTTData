@@ -30,6 +30,11 @@ import { HttpClientModule } from '@angular/common/http';
 import { CartComponent } from './cart/cart.component';
 import { CartService } from './cart/cart-service';
 import { RegisterComponent } from './register/register.component';
+import { FavoriteService } from './favorites/favorite.service';
+import { RatingService } from './ratings/rating.service';
+import { TopTacosComponent } from './ratings/top-tacos.component';
+import { OrderHistoryComponent } from './orders/order-history.component';
+import { OrderHistoryService } from './orders/order-history.service';
 
 import { routes } from './app.routes';
 
@@ -54,6 +59,8 @@ describe('AppComponent', () => {
         GroupBoxComponent,
         BigButtonComponent,
         LittleButtonComponent,
+        TopTacosComponent,
+        OrderHistoryComponent,
       ],
       imports: [
         RouterModule.forRoot(routes),
@@ -67,6 +74,9 @@ describe('AppComponent', () => {
         ApiService,
         CartService,
         RecentTacosService,
+        FavoriteService,
+        RatingService,
+        OrderHistoryService,
       ]
     }).compileComponents();
   }));

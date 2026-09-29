@@ -48,6 +48,7 @@
       <module>tacocloud-email</module>
       <module>tacocloud-jmx</module>
       <module>tacocloud-kitchen</module>
+      <module>tacocloud-messaging-contract</module>
       <module>tacocloud-messaging-jms</module>
       <module>tacocloud-messaging-kafka</module>
       <module>tacocloud-messaging-rabbitmq</module>
@@ -57,5 +58,15 @@
       <module>tacocloud-web</module>
       <module>tacocloud-ui</module>
     </modules>
+
+    <profiles>
+      <profile>
+        <id>critical-regressions</id>
+        <properties>
+          <test>IngredientControllerTest,OrderApiControllerTest,EmailOrderSubmissionServiceTest,OrderCreationServiceTest,RegistrationServiceTest,AuthorizationMatrixTest,PaymentMethodServiceTest,OrderOutboxMongoTest,OutboxPublisherTest,KitchenEventProcessorTest,RabbitRetryAndDlqTest,KitchenEventTransactionMongoTest,IdempotentOrderServiceTest,HttpRuntimeContractTest,RabbitOrderMessagingIntegrationTest,CriticalInfrastructureAvailabilityTest,OpenApiContractTest,OrderEventContractTest,DtoMapperContractTest,CouponServiceTest,OrderPricingServiceTest,OrderWorkflowServiceTest</test>
+          <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
+        </properties>
+      </profile>
+    </profiles>
 
 </project>

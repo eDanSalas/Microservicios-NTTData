@@ -1,32 +1,64 @@
 # The values given here are actually the default values. But they are explicitly
 # set here as an example of setting the Artemis properties.
 spring:
-  jms:
-    template:
-      default-destination: tacocloud.order.queue
+  data:
+    mongodb:
+      auto-index-creation: true
   artemis:
-    host: localhost
-    port: 61616
-    user: tacoweb
-    password: letm31n
+    host: ${ARTEMIS_HOST:localhost}
+    port: ${ARTEMIS_PORT:61616}
+    user: ${ARTEMIS_USER:}
+    password: ${ARTEMIS_PASSWORD:}
     embedded:
       enabled: false
-      
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:}
+    password: ${RABBITMQ_PASSWORD:}
   kafka:
-    bootstrap-servers:
-    - localhost:9092
-    template:
-      default-topic: tacocloud.orders.topic
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       key-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
     producer:
       key-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer    
+logging:
+  pattern:
+    level: "%5p [correlationId:%X{correlationId:-}]"
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+      roles: ADMIN
 tacocloud:
+  messaging:
+    transport: ${TACOCLOUD_MESSAGING_TRANSPORT:noop}
+    jms:
+      destination: ${JMS_ORDER_DESTINATION:tacocloud.order.queue}
+    rabbit:
+      exchange: ${RABBIT_ORDER_EXCHANGE:}
+      routing-key: ${RABBIT_ORDER_ROUTING_KEY:tacocloud.order.queue}
+    kafka:
+      topic: ${KAFKA_ORDER_TOPIC:tacocloud.orders.topic}
+  outbox:
+    batch-size: ${OUTBOX_BATCH_SIZE:20}
+    max-attempts: ${OUTBOX_MAX_ATTEMPTS:5}
+    publish-delay-ms: ${OUTBOX_PUBLISH_DELAY_MS:1000}
+    initial-backoff: ${OUTBOX_INITIAL_BACKOFF:1s}
+    max-backoff: ${OUTBOX_MAX_BACKOFF:5m}
+    claim-timeout: ${OUTBOX_CLAIM_TIMEOUT:1m}
   order:
     max-item-quantity: 20
     currency: MXN
+    history-max-size: 50
   coupons:
     codes:
       WELCOME10:
@@ -43,6 +75,25 @@ tacocloud:
         expires-on: 2027-12-31
         minimum-subtotal: 200.00
         max-discount: 50.00
+  taco-search:
+    max-size: 50
+    max-name-length: 60
+  taco-of-the-day:
+    zone: America/Mexico_City
+  ratings:
+    minimum-votes: 3
+    maximum-limit: 50
+  kitchen:
+    station-id: station-main
+    base-minutes: 5
+    queued-order-minutes: 2
+    item-minutes: 3
+    ingredient-minutes: 1
+  announcements:
+    max-text-length: 500
+    max-active: 20
+    max-ttl: 30d
+    cleanup-delay-ms: 60000
 ---
 # None of these properties will actually work as configured for this profile.
 # But it is left here as an example of configuring for a production profile
@@ -51,7 +102,7 @@ spring:
   profiles: production
     
   artemis:
-    host: artemis.tacocloud.com
-    port: 61617
-    user: tacoweb
-    password: l3tm31n
+    host: ${ARTEMIS_HOST}
+    port: ${ARTEMIS_PORT}
+    user: ${ARTEMIS_USER}
+    password: ${ARTEMIS_PASSWORD}

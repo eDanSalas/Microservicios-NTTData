@@ -81,7 +81,8 @@ public class OrderMapper {
     }
 
   public OrderResponse toResponse(TacoOrder order) {
-    String userId = order.getUser() != null ? order.getUser().getId() : null;
+    String userId = order.getUserId() != null ? order.getUserId()
+        : order.getUser() != null ? order.getUser().getId() : null;
 
     PaymentMethodSummaryResponse payment = order.getPaymentBrand() == null ? null : new PaymentMethodSummaryResponse(
             order.getPaymentBrand(),

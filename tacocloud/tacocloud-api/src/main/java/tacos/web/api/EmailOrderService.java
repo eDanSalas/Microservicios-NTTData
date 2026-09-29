@@ -13,6 +13,7 @@ import tacos.Ingredient;
 import tacos.PaymentMethod;
 import tacos.Taco;
 import tacos.TacoOrder;
+import tacos.OrderStatusChange;
 import tacos.User;
 import tacos.data.IngredientRepository;
 import tacos.data.PaymentMethodRepository;
@@ -176,6 +177,9 @@ public class EmailOrderService {
 
     order.setPlacedAt(new Date());
     order.setTacos(tacos);
+    order.getStatusHistory().add(new OrderStatusChange(null, order.getStatus(),
+        new Date(order.getPlacedAt().getTime()), user.getId(), "USER", "EMAIL",
+        "ORDER_CREATED"));
 
     return order;
   }

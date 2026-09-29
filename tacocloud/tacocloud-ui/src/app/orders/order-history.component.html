@@ -1,0 +1,61 @@
+<cloud-title>My orders</cloud-title>
+
+<p *ngIf="orders.length === 0">You have no orders on this page.</p>
+
+<ul class="orders">
+  <li *ngFor="let order of orders">
+    <b>{{order.placedAt | date:'medium'}}</b>
+    <span>{{order.status}} · {{order.total | currency:order.currency}} · {{order.itemCount}} items</span>
+    <button type="button" (click)="view(order.id)">View details</button>
+  </li>
+</ul>
+
+<div class="paging">
+  <button type="button" [disabled]="page === 0" (click)="load(page - 1)">Previous</button>
+  <span>Page {{page + 1}} of {{totalPages || 1}}</span>
+  <button type="button" [disabled]="page + 1 >= totalPages" (click)="load(page + 1)">Next</button>
+</div>
+
+<section *ngIf="selected" class="detail">
+  <h2>Order {{selected.id}}</h2>
+  <p>{{selected.deliveryName}}, {{selected.deliveryStreet}}, {{selected.deliveryCity}},
+    {{selected.deliveryState}} {{selected.deliveryZip}}</p>
+  <p *ngIf="selected.paymentMethod">{{selected.paymentMethod.brand}} ending in {{selected.paymentMethod.last4}}</p>
+  <ul>
+    <li *ngFor="let item of selected.items">
+      {{item.quantity}} × {{item.taco.name}} — {{item.subtotal | currency:selected.currency}}
+    </li>
+  </ul>
+  <b>Total: {{selected.total | currency:selected.currency}}</b>
+  <h3>Status history</h3>
+  <ul>
+    <li *ngFor="let change of selected.statusHistory">
+      {{change.changedAt | date:'medium'}} · {{change.fromStatus || 'NEW'}} → {{change.toStatus}}
+      · {{change.actorRole}}<span *ngIf="change.reason"> · {{change.reason}}</span>
+    </li>
+  </ul>
+  <div *ngIf="selected.status === 'CREATED' || selected.status === 'PLACED' || selected.status === 'ACCEPTED'">
+    <label for="cancellationReason">Cancellation reason</label>
+    <input id="cancellationReason" name="cancellationReason" [(ngModel)]="cancellationReason">
+    <button type="button" (click)="cancel()">Cancel order</button>
+  </div>
+  <h3>Order again</h3>
+  <label for="paymentMethodId">Payment method ID</label>
+  <input id="paymentMethodId" name="paymentMethodId" [(ngModel)]="paymentMethodId">
+  <button type="button" [disabled]="!paymentMethodId.trim()" (click)="reorder()">Reorder</button>
+  <section *ngIf="reorderResult">
+    <p *ngIf="reorderResult.status === 'CREATED'">New order: {{reorderResult.order.id}}</p>
+    <div *ngIf="reorderResult.status === 'QUOTE'">
+      <p>The current order differs from the original.</p>
+      <ul>
+        <li *ngFor="let difference of reorderResult.differences">
+          {{difference.type}}<span *ngIf="difference.tacoName"> ({{difference.tacoName}})</span>:
+          {{difference.previousValue}} → {{difference.currentValue}}
+        </li>
+      </ul>
+      <p>{{reorderResult.previousTotal | currency:reorderResult.currency}} →
+        {{reorderResult.currentTotal | currency:reorderResult.currency}}</p>
+      <button type="button" (click)="reorder(true)">Confirm current conditions</button>
+    </div>
+  </section>
+</section>

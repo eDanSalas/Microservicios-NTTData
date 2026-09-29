@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
 
 import reactor.core.publisher.Mono;
 import tacos.Ingredient;
@@ -232,7 +233,7 @@ public class IngredientControllerTest {
     testClient.post()
         .uri(
             "https://api.example.com:8443"
-                + "/api/ingredients")
+                + "/api/v1/ingredients")
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(request)
         .exchange()
@@ -241,7 +242,7 @@ public class IngredientControllerTest {
         .valueEquals(
             "Location",
             "https://api.example.com:8443"
-                + "/api/ingredients/1L")
+                + "/api/v1/ingredients/1L")
         .expectBody(IngredientResponse.class)
         .value(response -> {
           assertEquals(
@@ -272,15 +273,24 @@ public class IngredientControllerTest {
 
     IngredientRequest invalidRequest =
         new IngredientRequest();
+    invalidRequest.setName("");
 
     testClient.post()
         .uri(
             "https://api.example.com:8443"
-                + "/api/ingredients")
+                + "/api/v1/ingredients")
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(invalidRequest)
         .exchange()
-        .expectStatus().isBadRequest();
+        .expectStatus().isBadRequest()
+        .expectHeader().contentType(MediaType.valueOf("application/problem+json"))
+        .expectBody().jsonPath("$.type").isEqualTo("urn:tacocloud:problem:validation-error")
+        .jsonPath("$.title").isEqualTo("Request validation failed")
+        .jsonPath("$.status").isEqualTo(400)
+        .jsonPath("$.detail").isEqualTo("One or more fields are invalid")
+        .jsonPath("$.instance").isEqualTo("/api/v1/ingredients")
+        .jsonPath("$.code").isEqualTo("VALIDATION_ERROR")
+        .jsonPath("$.violations.length()").isEqualTo(3);
 
     Mockito.verifyNoInteractions(repo);
   }
@@ -296,9 +306,10 @@ public class IngredientControllerTest {
             repo,
             mapper);
 
-    return WebTestClient
+    return MockMvcWebTestClient
         .bindToController(controller)
         .controllerAdvice(new GlobalApiExceptionHandler())
+        .filters(new ApiVersioningFilter(), new tacos.observability.CorrelationIdWebFilter())
         .build();
   }
 

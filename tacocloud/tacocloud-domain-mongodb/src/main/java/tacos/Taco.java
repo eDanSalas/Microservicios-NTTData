@@ -7,6 +7,8 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.rest.core.annotation.RestResource;
 
@@ -15,6 +17,14 @@ import lombok.Data;
 @Data
 @RestResource(rel = "tacos", path = "tacos")
 @Document
+@CompoundIndexes({
+    @CompoundIndex(name = "taco_created_at_id", def = "{'createdAt': -1, '_id': -1}"),
+    @CompoundIndex(name = "taco_name_id", def = "{'name': 1, '_id': 1}"),
+    @CompoundIndex(name = "taco_ingredient_id", def = "{'ingredients._id': 1, '_id': 1}"),
+    @CompoundIndex(name = "taco_dietary_tag", def = "{'ingredients.dietaryTags': 1, '_id': 1}"),
+    @CompoundIndex(name = "taco_allergen", def = "{'ingredients.allergens': 1, '_id': 1}"),
+    @CompoundIndex(name = "taco_spice", def = "{'ingredients.spiceLevel': 1, '_id': 1}")
+})
 public class Taco {
 
   @Id
@@ -25,6 +35,8 @@ public class Taco {
   private String name;
   
   private Date createdAt = new Date();
+
+  private boolean published = true;
   
   @Size(min=1, message="You must choose at least 1 ingredient")
   private List<Ingredient> ingredients;

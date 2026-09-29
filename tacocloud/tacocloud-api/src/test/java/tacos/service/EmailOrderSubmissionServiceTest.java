@@ -16,237 +16,100 @@ import org.mockito.Mockito;
 
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import tacos.TacoOrder;
 import tacos.InventoryReservation;
-import tacos.data.OrderRepository;
+import tacos.TacoOrder;
 import tacos.inventory.InventoryService;
-import tacos.messaging.OrderMessagingService;
+import tacos.outbox.OrderOutboxService;
 import tacos.web.api.EmailOrder;
 import tacos.web.api.EmailOrderService;
 
 public class EmailOrderSubmissionServiceTest {
 
   private EmailOrderService emailOrderService;
-  private OrderRepository orderRepo;
-  private OrderMessagingService orderMessages;
+  private OrderOutboxService orderOutbox;
   private EmailOrderSubmissionService service;
   private InventoryService inventoryService;
 
   @BeforeEach
   public void setUp() {
-    emailOrderService =
-        Mockito.mock(EmailOrderService.class);
-
-    orderRepo =
-        Mockito.mock(OrderRepository.class);
-
-    orderMessages =
-        Mockito.mock(OrderMessagingService.class);
-
+    emailOrderService = Mockito.mock(EmailOrderService.class);
+    orderOutbox = Mockito.mock(OrderOutboxService.class);
     inventoryService = Mockito.mock(InventoryService.class);
     when(inventoryService.reserve(Mockito.any(TacoOrder.class), Mockito.anyString()))
         .thenReturn(Mono.just(new InventoryReservation()));
     when(inventoryService.release(Mockito.anyString())).thenReturn(Mono.empty());
-
-    service = new EmailOrderSubmissionService(
-        emailOrderService,
-        orderRepo,
-        orderMessages,
-        inventoryService);
+    service = new EmailOrderSubmissionService(emailOrderService, orderOutbox, inventoryService);
   }
 
   @Test
-  public void shouldConvertSaveThenPublish() {
-    EmailOrder emailOrder = new EmailOrder();
-
-    Mono<EmailOrder> request =
-        Mono.just(emailOrder);
-
-    TacoOrder convertedOrder =
-        new TacoOrder();
-
-    TacoOrder savedOrder =
-        new TacoOrder();
-
+  public void shouldConvertThenSaveWithOutbox() {
+    Mono<EmailOrder> request = Mono.just(new EmailOrder());
+    TacoOrder convertedOrder = new TacoOrder();
+    TacoOrder savedOrder = new TacoOrder();
     savedOrder.setId("order-1");
-
-    when(emailOrderService
-            .convertEmailOrderToDomainOrder(request))
+    when(emailOrderService.convertEmailOrderToDomainOrder(request))
         .thenReturn(Mono.just(convertedOrder));
+    when(orderOutbox.save(convertedOrder)).thenReturn(Mono.just(savedOrder));
 
-    when(orderRepo.save(convertedOrder))
-        .thenReturn(Mono.just(savedOrder));
-
-    StepVerifier.create(
-            service.submit(request))
-        .assertNext(result ->
-            assertSame(savedOrder, result))
+    StepVerifier.create(service.submit(request)).assertNext(result -> assertSame(savedOrder, result))
         .verifyComplete();
 
-    InOrder executionOrder =
-        Mockito.inOrder(
-            emailOrderService,
-            orderRepo,
-            orderMessages);
-
-    executionOrder
-        .verify(emailOrderService)
-        .convertEmailOrderToDomainOrder(request);
-
-    executionOrder
-        .verify(orderRepo)
-        .save(convertedOrder);
-
-    executionOrder
-        .verify(orderMessages)
-        .sendOrder(savedOrder);
+    InOrder executionOrder = Mockito.inOrder(emailOrderService, orderOutbox);
+    executionOrder.verify(emailOrderService).convertEmailOrderToDomainOrder(request);
+    executionOrder.verify(orderOutbox).save(convertedOrder);
   }
 
   @Test
-  public void shouldNotSaveOrPublishWhenConversionFails() {
-    EmailOrder emailOrder = new EmailOrder();
+  public void shouldNotSaveWhenConversionFails() {
+    Mono<EmailOrder> request = Mono.just(new EmailOrder());
+    RuntimeException error = new RuntimeException("Conversion failed");
+    when(emailOrderService.convertEmailOrderToDomainOrder(request)).thenReturn(Mono.error(error));
 
-    Mono<EmailOrder> request =
-        Mono.just(emailOrder);
+    StepVerifier.create(service.submit(request)).expectErrorSatisfies(result ->
+        assertSame(error, result)).verify();
 
-    RuntimeException conversionError =
-        new RuntimeException(
-            "Conversion failed");
-
-    when(emailOrderService
-            .convertEmailOrderToDomainOrder(request))
-        .thenReturn(
-            Mono.error(conversionError));
-
-    StepVerifier.create(
-            service.submit(request))
-        .expectErrorSatisfies(error ->
-            assertSame(conversionError, error))
-        .verify();
-
-    verify(emailOrderService)
-        .convertEmailOrderToDomainOrder(request);
-
-    verifyNoInteractions(
-        orderRepo,
-        orderMessages);
+    verify(emailOrderService).convertEmailOrderToDomainOrder(request);
+    verifyNoInteractions(orderOutbox);
   }
 
   @Test
-  public void shouldNotPublishWhenSaveFails() {
-    EmailOrder emailOrder = new EmailOrder();
-
-    Mono<EmailOrder> request =
-        Mono.just(emailOrder);
-
-    TacoOrder convertedOrder =
-        new TacoOrder();
-
-    RuntimeException saveError =
-        new RuntimeException(
-            "Database failed");
-
-    when(emailOrderService
-            .convertEmailOrderToDomainOrder(request))
+  public void shouldReleaseReservationWhenTransactionalSaveFails() {
+    Mono<EmailOrder> request = Mono.just(new EmailOrder());
+    TacoOrder convertedOrder = new TacoOrder();
+    RuntimeException error = new RuntimeException("Database failed");
+    when(emailOrderService.convertEmailOrderToDomainOrder(request))
         .thenReturn(Mono.just(convertedOrder));
+    when(orderOutbox.save(convertedOrder)).thenReturn(Mono.error(error));
 
-    when(orderRepo.save(convertedOrder))
-        .thenReturn(
-            Mono.error(saveError));
+    StepVerifier.create(service.submit(request)).expectErrorSatisfies(result ->
+        assertSame(error, result)).verify();
 
-    StepVerifier.create(
-            service.submit(request))
-        .expectErrorSatisfies(error ->
-            assertSame(saveError, error))
-        .verify();
-
-    verify(orderRepo)
-        .save(convertedOrder);
-
-    verifyNoInteractions(orderMessages);
+    verify(orderOutbox).save(convertedOrder);
+    verify(inventoryService).release(Mockito.anyString());
   }
 
   @Test
   public void shouldSubscribeToColdPublishersOnlyOnce() {
-    EmailOrder emailOrder = new EmailOrder();
+    Mono<EmailOrder> request = Mono.just(new EmailOrder());
+    TacoOrder convertedOrder = new TacoOrder();
+    TacoOrder savedOrder = new TacoOrder();
+    AtomicInteger conversions = new AtomicInteger();
+    AtomicInteger saves = new AtomicInteger();
+    when(emailOrderService.convertEmailOrderToDomainOrder(request)).thenReturn(Mono.defer(() -> {
+      conversions.incrementAndGet();
+      return Mono.just(convertedOrder);
+    }));
+    when(orderOutbox.save(convertedOrder)).thenReturn(Mono.defer(() -> {
+      saves.incrementAndGet();
+      return Mono.just(savedOrder);
+    }));
 
-    Mono<EmailOrder> request =
-        Mono.just(emailOrder);
-
-    TacoOrder convertedOrder =
-        new TacoOrder();
-
-    TacoOrder savedOrder =
-        new TacoOrder();
-
-    savedOrder.setId("order-1");
-
-    AtomicInteger conversionSubscriptions =
-        new AtomicInteger();
-
-    AtomicInteger saveSubscriptions =
-        new AtomicInteger();
-
-    AtomicInteger publications =
-        new AtomicInteger();
-
-    when(emailOrderService
-            .convertEmailOrderToDomainOrder(request))
-        .thenReturn(
-            Mono.defer(() -> {
-              conversionSubscriptions.incrementAndGet();
-              return Mono.just(convertedOrder);
-            }));
-
-    when(orderRepo.save(convertedOrder))
-        .thenReturn(
-            Mono.defer(() -> {
-              saveSubscriptions.incrementAndGet();
-              return Mono.just(savedOrder);
-            }));
-
-    Mockito.doAnswer(invocation -> {
-      publications.incrementAndGet();
-      return null;
-    })
-        .when(orderMessages)
-        .sendOrder(savedOrder);
-
-    Mono<TacoOrder> result =
-        service.submit(request);
-
-    assertEquals(
-        0,
-        conversionSubscriptions.get());
-
-    assertEquals(
-        0,
-        saveSubscriptions.get());
-
-    assertEquals(
-        0,
-        publications.get());
-
-    StepVerifier.create(result)
-        .expectNext(savedOrder)
-        .verifyComplete();
-
-    assertEquals(
-        1,
-        conversionSubscriptions.get());
-
-    assertEquals(
-        1,
-        saveSubscriptions.get());
-
-    assertEquals(
-        1,
-        publications.get());
-
-    verify(orderRepo, times(1))
-        .save(convertedOrder);
-
-    verify(orderMessages, times(1))
-        .sendOrder(savedOrder);
+    Mono<TacoOrder> result = service.submit(request);
+    assertEquals(0, conversions.get());
+    assertEquals(0, saves.get());
+    StepVerifier.create(result).expectNext(savedOrder).verifyComplete();
+    assertEquals(1, conversions.get());
+    assertEquals(1, saves.get());
+    verify(orderOutbox, times(1)).save(convertedOrder);
   }
 }

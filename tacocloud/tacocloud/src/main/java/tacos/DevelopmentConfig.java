@@ -3,6 +3,7 @@ package tacos;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -10,11 +11,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.EnumSet;
+
+import tacos.UserRole;
 import tacos.Ingredient.Type;
 import tacos.data.IngredientRepository;
+import tacos.data.OrderRepository;
 import tacos.data.PaymentMethodRepository;
 import tacos.data.TacoRepository;
 import tacos.data.UserRepository;
+import tacos.service.OrderPricingService;
 
 @Profile("!prod")
 @Configuration
@@ -23,7 +29,8 @@ public class DevelopmentConfig {
   @Bean
   public CommandLineRunner dataLoader(IngredientRepository repo,
         UserRepository userRepo, PasswordEncoder encoder, TacoRepository tacoRepo,
-        PaymentMethodRepository paymentMethodRepo) { // user repo for ease of testing with a built-in user
+        PaymentMethodRepository paymentMethodRepo, OrderRepository orderRepo,
+        OrderPricingService pricingService) { // user repo for ease of testing with a built-in user
     
     return new CommandLineRunner() {
       @Override
@@ -38,15 +45,6 @@ public class DevelopmentConfig {
         Ingredient jack = saveAnIngredient("JACK", "Monterrey Jack", Type.CHEESE, "0.95");
         Ingredient salsa = saveAnIngredient("SLSA", "Salsa", Type.SAUCE, "0.60");
         Ingredient sourCream = saveAnIngredient("SRCR", "Sour Cream", Type.SAUCE, "0.70");
-        
-//        UserUDT u = new UserUDT(username, fullname, phoneNumber)
-        
-        userRepo.save(new User("habuma", encoder.encode("password"), 
-              "Craig Walls", "123 North Street", "Cross Roads", "TX", 
-              "76227", "123-123-1234", "craig@habuma.com"))
-          .subscribe(user -> {
-              paymentMethodRepo.save(new PaymentMethod(null, user.getId(), "tok_fake_seed_habuma", "VISA", "1111", 10, 2099, new Date())).subscribe();
-          });        
         
         Taco taco1 = new Taco();
         taco1.setId("TACO1");
@@ -65,6 +63,41 @@ public class DevelopmentConfig {
         taco3.setName("Veg-Out");
         taco3.setIngredients(Arrays.asList(flourTortilla, cornTortilla, tomatoes, lettuce, salsa));
         tacoRepo.save(taco3).subscribe();
+
+        User habuma = new User("habuma", encoder.encode("password"),
+              "Craig Walls", "123 North Street", "Cross Roads", "TX",
+              "76227", "123-123-1234", "craig@habuma.com");
+        habuma.setRoles(EnumSet.of(UserRole.USER, UserRole.ADMIN));
+        userRepo.findByUsername(habuma.getUsername())
+          .switchIfEmpty(userRepo.save(habuma))
+          .flatMap(user -> paymentMethodRepo.save(new PaymentMethod(null, user.getId(),
+              "tok_fake_seed_habuma", "VISA", "1111", 10, 2099, new Date()))
+            .flatMap(paymentMethod -> {
+              TacoOrder order = new TacoOrder();
+              order.setId("ORDER-TC-04");
+              order.setUser(user);
+              order.setDeliveryName(user.getFullname());
+              order.setDeliveryStreet(user.getStreet());
+              order.setDeliveryCity(user.getCity());
+              order.setDeliveryState(user.getState());
+              order.setDeliveryZip(user.getZip());
+              order.setPaymentMethodId(paymentMethod.getId());
+              order.setPaymentBrand(paymentMethod.getBrand());
+              order.setPaymentLast4(paymentMethod.getLast4());
+              OrderItem item = pricingService.price(taco1, 1);
+              order.setItems(List.of(item));
+              order.setSubtotal(item.getSubtotal());
+              order.setTotal(item.getSubtotal());
+              return orderRepo.findById(order.getId())
+                  .switchIfEmpty(orderRepo.save(order));
+            }))
+          .subscribe();
+
+        User admin = new User("admin", encoder.encode("admin"),
+              "Admin User", "123 Admin Street", "Cross Roads", "TX",
+              "76227", "123-123-1234", "admin@tacocloud.com");
+        admin.setRoles(EnumSet.of(UserRole.USER, UserRole.ADMIN));
+        userRepo.save(admin).subscribe();
 
       }
 

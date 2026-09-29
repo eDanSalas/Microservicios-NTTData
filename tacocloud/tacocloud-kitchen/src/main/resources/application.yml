@@ -1,19 +1,59 @@
 server:
   port: 8081
 
+logging:
+  pattern:
+    level: "%5p [correlationId:%X{correlationId:-}]"
+
+spring:
+  data:
+    mongodb:
+      database: ${KITCHEN_MONGODB_DATABASE:tacocloud-kitchen}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:}
+    password: ${RABBITMQ_PASSWORD:}
+
+tacocloud:
+  consumer:
+    max-attempts: ${KITCHEN_MAX_ATTEMPTS:3}
+    initial-backoff-ms: ${KITCHEN_INITIAL_BACKOFF_MS:100}
+    max-backoff-ms: ${KITCHEN_MAX_BACKOFF_MS:2000}
+    multiplier: ${KITCHEN_BACKOFF_MULTIPLIER:2}
+    dead-letter-exchange: ${RABBIT_ORDER_DLX:tacocloud.order.dlx}
+    dead-letter-queue: ${RABBIT_ORDER_DLQ:tacocloud.order.dlq}
+    dead-letter-routing-key: ${RABBIT_ORDER_DLQ_ROUTING_KEY:tacocloud.order.dead}
+  messaging:
+    jms:
+      destination: ${JMS_ORDER_DESTINATION:tacocloud.order.queue}
+    rabbit:
+      queue: ${RABBIT_ORDER_QUEUE:tacocloud.order.queue}
+    kafka:
+      topic: ${KAFKA_ORDER_TOPIC:tacocloud.orders.topic}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
 ---
 spring:
   profiles: jms-template, jms-listener
-# The values given here are actually the default values. But they are explicitly
-# set here as an example of setting the Artemis properties.
   jms:
     template:
       receive-timeout: 2
   artemis:
-    host: localhost
-    port: 61616
-    user: tacoweb
-    password: letm31n
+    host: ${ARTEMIS_HOST:localhost}
+    port: ${ARTEMIS_PORT:61616}
+    user: ${ARTEMIS_USER:}
+    password: ${ARTEMIS_PASSWORD:}
     embedded:
       enabled: false
     
@@ -22,17 +62,9 @@ spring:
   profiles: kafka-listener
     
   kafka:
-    bootstrap-servers:
-    - localhost:9092
-    template:
-      default-topic: tacocloud.orders.topic
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       group-id: tacocloud_kitchen
       properties:
         spring.json.trusted.packages: tacos
-      
-      
-      
-      
-      

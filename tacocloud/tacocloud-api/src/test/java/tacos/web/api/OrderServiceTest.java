@@ -277,13 +277,13 @@ public class OrderServiceTest {
 
         Mockito.doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(authenticatedUser).getAuthorities();
 
-        Mockito.when(repo.findByUser_IdOrderByPlacedAtDesc("user-a")).thenReturn(Flux.just(ownedOrder));
+        Mockito.when(repo.findByUserIdOrderByPlacedAtDesc("user-a")).thenReturn(Flux.just(ownedOrder));
 
         OrderService service = service(repo);
 
         StepVerifier.create(service.findVisibleOrders(authenticatedUser)).expectNext(ownedOrder).verifyComplete();
 
-        Mockito.verify(repo).findByUser_IdOrderByPlacedAtDesc("user-a");
+        Mockito.verify(repo).findByUserIdOrderByPlacedAtDesc("user-a");
 
         Mockito.verify(repo, Mockito.never()).findAll();
     }
@@ -308,7 +308,7 @@ public class OrderServiceTest {
 
         Mockito.verify(repo).findAll();
 
-        Mockito.verify(repo,Mockito.never()).findByUser_IdOrderByPlacedAtDesc(Mockito.anyString());
+        Mockito.verify(repo,Mockito.never()).findByUserIdOrderByPlacedAtDesc(Mockito.anyString());
     }
 
     private OrderService service(OrderRepository repo) {

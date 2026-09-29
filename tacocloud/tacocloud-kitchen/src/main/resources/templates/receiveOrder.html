@@ -8,21 +8,17 @@
   </head>
   
   <body>
-    <h2>Order for <span th:text="${order.deliveryName}"></span></h2>
-	<h3>Deliver to:</h3>
-	<div>
-	  <span th:text="${order.deliveryStreet}">STREET ADDRESS</span><br/>
-	  <span th:text="${order.deliveryCity}">CITY</span>, 
-	  <span th:text="${order.deliveryState}">STATE</span> 
-	  <span th:text="${order.deliveryZip}">ZIP</span><br/>	
-	</div>
+	<h2>Kitchen order <span th:text="${order.orderId}"></span></h2>
+	<p>Status: <span th:text="${order.status}"></span></p>
+	<p th:if="${order.stationId}">Station: <span th:text="${order.stationId}"></span></p>
 	
 	<h3>Tacos:</h3>
-	<div th:each="taco : ${order.tacos}">
-	  <b th:text="${taco.name}">TACO NAME</b><br/>
+	<div th:each="item : ${order.items}">
+	  <b th:text="${item.tacoName}">TACO NAME</b>
+	  <span th:text="${' x' + item.quantity}"></span><br/>
 	  <ul>
-	  	<li th:each="ingredient : ${taco.ingredients}">
-	  	  <span th:text="${ingredient.name}">INGREDIENT</span>
+	    <li th:each="ingredient : ${item.ingredients}">
+	      <span th:text="${ingredient}">INGREDIENT</span>
 	  	</li>
 	  </ul>
 	</div>

@@ -170,7 +170,7 @@ public class DtoMapperContractTest {
         entity.getUser());
 
     assertEquals(
-        OrderStatus.PLACED,
+        OrderStatus.CREATED,
         entity.getStatus());
 
     assertEquals(new BigDecimal("1.50"), entity.getTotal());

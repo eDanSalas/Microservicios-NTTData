@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,7 +33,7 @@ public class GlobalApiExceptionHandlerTest {
   @BeforeEach
   public void setUp() {
     testClient =
-        WebTestClient
+        MockMvcWebTestClient
             .bindToController(new ErrorTestController())
             .controllerAdvice(new GlobalApiExceptionHandler())
             .build();

@@ -8,7 +8,7 @@ export class RecentTacosService {
   }
 
   getRecentTacos() {
-    return this.apiService.get('/tacos?recent');
+    return this.apiService.get('/api/v1/tacos?size=12&sort=createdAt,desc');
   }
 
 }

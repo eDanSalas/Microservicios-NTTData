@@ -1,0 +1,18 @@
+ol.ranking {
+  max-width: 700px;
+}
+
+ol.ranking li {
+  background: rgba(118, 214, 255, 0.25);
+  border: 1px solid #76D6FF;
+  border-radius: 10px;
+  color: #003366;
+  margin: 10px 0;
+  padding: 15px;
+}
+
+ol.ranking span,
+ol.ranking small {
+  display: block;
+  margin-top: 5px;
+}
