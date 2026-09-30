@@ -1,0 +1,11 @@
+FROM maven:3.9.9-eclipse-temurin-21
+
+WORKDIR /workspace
+COPY tacocloud/ ./tacocloud/
+COPY docker/run-tests.sh /usr/local/bin/run-tests
+RUN chmod +x /usr/local/bin/run-tests
+
+WORKDIR /workspace/tacocloud
+ENV TACOCLOUD_REQUIRE_DOCKER=true
+ENTRYPOINT ["/usr/local/bin/run-tests"]
+CMD ["clean", "verify"]

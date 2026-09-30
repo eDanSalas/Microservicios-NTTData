@@ -68,8 +68,11 @@ class RabbitOrderMessagingIntegrationTest {
         com.rabbitmq.client.Channel channel = connection.createChannel()) {
       com.rabbitmq.client.GetResponse delivery = channel.basicGet(QUEUE, false);
       assertThat(delivery).isNotNull();
-      assertThat(delivery.getProps().getHeaders()).containsEntry("X_ORDER_SOURCE", "WEB")
-          .containsEntry("X_CORRELATION_ID", correlationId);
+      // AMQP table strings are decoded as LongString by the RabbitMQ client.
+      assertThat(delivery.getProps().getHeaders().get("X_ORDER_SOURCE").toString())
+          .isEqualTo("WEB");
+      assertThat(delivery.getProps().getHeaders().get("X_CORRELATION_ID").toString())
+          .isEqualTo(correlationId);
     }
 
     Message redelivery = template.receive(QUEUE, 5000);

@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource("classpath:taco-test.properties")
-public class TacoCloudApplicationTests {
+public class TacoCloudApplicationTests extends MongoRuntimeTest {
 
   @Autowired
   private MockMvc client;

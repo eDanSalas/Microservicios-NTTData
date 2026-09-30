@@ -3,8 +3,9 @@ package tacos;
 import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.http.MediaType;
@@ -15,10 +16,17 @@ import org.springframework.test.context.TestPropertySource;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment=WebEnvironment.RANDOM_PORT)
 @TestPropertySource("classpath:taco-test.properties")
-public class DesignTacoControllerWebTest {
+public class DesignTacoControllerWebTest extends MongoRuntimeTest {
 
-  @Autowired
+  @LocalServerPort
+  private int port;
+
   private WebTestClient testClient;
+
+  @BeforeEach
+  void connectToRuntime() {
+    testClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+  }
 
   @Test
   public void shouldReturnRecentTacos() throws IOException {

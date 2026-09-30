@@ -13,6 +13,7 @@ import org.springframework.data.mongodb.core.convert
     .MappingMongoConverter;
 import org.springframework.data.mongodb.core.convert
     .NoOpDbRefResolver;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.data.mongodb.core.mapping
     .MongoMappingContext;
 
@@ -27,6 +28,8 @@ public class PaymentDataContractTest {
   public void setUp() throws Exception {
     MongoMappingContext context =
         new MongoMappingContext();
+    MongoCustomConversions conversions = MongoCustomConversions.create(adapter -> {});
+    context.setSimpleTypeHolder(conversions.getSimpleTypeHolder());
 
     context.setInitialEntitySet(
         Set.of(
@@ -39,6 +42,7 @@ public class PaymentDataContractTest {
         new MappingMongoConverter(
             NoOpDbRefResolver.INSTANCE,
             context);
+    converter.setCustomConversions(conversions);
 
     converter.afterPropertiesSet();
 

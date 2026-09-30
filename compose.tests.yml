@@ -1,0 +1,22 @@
+services:
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    environment:
+      DOCKER_HOST: unix:///var/run/docker.sock
+      TESTCONTAINERS_HOST_OVERRIDE: host.docker.internal
+      TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
+      REPORT_SET: ${REPORT_SET:-full}
+      npm_config_audit: "false"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - maven-test-cache:/root/.m2
+      - npm-test-cache:/root/.npm
+      - ./test-reports:/reports
+
+volumes:
+  maven-test-cache:
+  npm-test-cache:

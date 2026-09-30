@@ -8,8 +8,10 @@ import org.testcontainers.DockerClientFactory;
 class CriticalInfrastructureAvailabilityTest {
 
   @Test
-  void shouldRequireDockerInCi() {
-    if ("true".equalsIgnoreCase(System.getenv("CI")))
-      assertThat(DockerClientFactory.instance().isDockerAvailable()).isTrue();
+  void shouldRequireDockerInCiOrDockerRunner() {
+    if ("true".equalsIgnoreCase(System.getenv("CI"))
+        || "true".equalsIgnoreCase(System.getenv("TACOCLOUD_REQUIRE_DOCKER")))
+      assertThat(DockerClientFactory.instance().isDockerAvailable())
+          .as("Docker must be available for TC-36 integration tests").isTrue();
   }
 }

@@ -22,6 +22,7 @@
       <selenium.version>4.8.3</selenium.version>
       <selenium-htmlunit.version>4.8.3</selenium-htmlunit.version>
       <htmlunit.version>2.70.0</htmlunit.version>
+      <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
 
     <dependencyManagement>
@@ -63,7 +64,7 @@
       <profile>
         <id>critical-regressions</id>
         <properties>
-          <test>IngredientControllerTest,OrderApiControllerTest,EmailOrderSubmissionServiceTest,OrderCreationServiceTest,RegistrationServiceTest,AuthorizationMatrixTest,PaymentMethodServiceTest,OrderOutboxMongoTest,OutboxPublisherTest,KitchenEventProcessorTest,RabbitRetryAndDlqTest,KitchenEventTransactionMongoTest,IdempotentOrderServiceTest,HttpRuntimeContractTest,RabbitOrderMessagingIntegrationTest,CriticalInfrastructureAvailabilityTest,OpenApiContractTest,OrderEventContractTest,DtoMapperContractTest,CouponServiceTest,OrderPricingServiceTest,OrderWorkflowServiceTest</test>
+          <test>IngredientControllerTest,OrderApiControllerTest,EmailOrderSubmissionServiceTest,OrderCreationServiceTest,RegistrationServiceTest,AuthorizationMatrixTest,PaymentMethodServiceTest,OrderOutboxMongoTest,OutboxConfigurationTest,OutboxPublisherTest,KitchenEventProcessorTest,RabbitRetryAndDlqTest,KitchenEventTransactionMongoTest,IdempotentOrderServiceTest,HttpRuntimeContractTest,RabbitOrderMessagingIntegrationTest,CriticalInfrastructureAvailabilityTest,OpenApiContractTest,OrderEventContractTest,DtoMapperContractTest,CouponServiceTest,OrderPricingServiceTest,OrderWorkflowServiceTest</test>
           <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
         </properties>
       </profile>

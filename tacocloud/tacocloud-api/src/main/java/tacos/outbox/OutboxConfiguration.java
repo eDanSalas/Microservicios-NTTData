@@ -30,7 +30,7 @@ public class OutboxConfiguration {
   }
 
   @Bean
-  @ConditionalOnMissingBean
+  @ConditionalOnMissingBean(name = "outboxClock")
   public Clock outboxClock() {
     return Clock.systemUTC();
   }

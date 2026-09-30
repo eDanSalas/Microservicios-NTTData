@@ -27,6 +27,7 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @TestPropertySource("classpath:taco-test.properties")
+@Disabled("TODO: Need to get around authentication in this test")
 public class DesignTacoControllerBrowserTest {
 
   private static EdgeDriver browser;
@@ -56,7 +57,6 @@ public class DesignTacoControllerBrowserTest {
   }
 
   @Test
-  @Disabled("TODO: Need to get around authentication in this test")
   public void testDesignATacoPage() throws Exception {
     browser.get("http://localhost:" + port + "/api/tacos");
 

@@ -1,0 +1,13 @@
+**/.git
+**/target
+**/node_modules
+**/node
+**/dist
+**/.idea
+**/.vscode
+test-reports
+.docker-test-checkout
+docs
+*.pdf
+*.docx
+*.pptx
